@@ -4,95 +4,62 @@
 
 #define MAX 256 // ASCII
 
-// -------------------------Lista-encadeada-e-AVBB-----------------------------------
 
-typedef struct no
+// -------------------------Min-Heap-----------------------------------
+typedef struct
 {
     unsigned char letra;
     int frequencia;
-    struct no *esq, *dir, *prox;
 } No;
 
 typedef struct
 {
-    No *inicio;
-    int tam;
-} Lista;
+    No *array;
+    int tamanho;
+    int capacidade;
+} MinHeap;
 
-void cria_lista(Lista *lista)
+MinHeap* criarMinHeap(int capacidade)
 {
-
-    lista->inicio = NULL;
-    lista->tam = 0;
+    MinHeap* minHeap = (MinHeap*)malloc(sizeof(MinHeap));
+    minHeap->tamanho = 0;
+    minHeap->capacidade = capacidade;
+    minHeap->array = (No*)malloc(capacidade * sizeof(No));
+    return minHeap;
 }
-void ordenar_lista(Lista *lista, No *no)
+
+void inserirElemento(MinHeap* minHeap, No no)
 {
-    No *aux;
-    if (lista->inicio == NULL)
+    if (minHeap->tamanho == minHeap->capacidade)
     {
-        lista->inicio = no;
-        // lista->tam++;
+        printf("A min-heap está cheia\n");
+        return;
     }
-    else if (lista->inicio->frequencia > no->frequencia)
-    {
-        no->prox = lista->inicio;
-        lista->inicio = no;
-        // lista->tam++;
-    }
-    else
-    {
-        aux = lista->inicio;
-        while (aux->prox && aux->prox->frequencia <= no->frequencia)
-            aux = aux->prox;
 
-        no->prox = aux->prox;
-        aux->prox = no;
-        // lista->tam++;
+    // Insere o novo nó no final do array
+    int indice = minHeap->tamanho;
+    minHeap->array[indice] = no;
+    minHeap->tamanho++;
+
+    // Garante que a propriedade da min-heap seja mantida
+    while (indice != 0 && minHeap->array[indice].frequencia < minHeap->array[(indice - 1) / 2].frequencia)
+    {
+        // Troca o novo nó com seu pai até que a propriedade da min-heap seja restaurada
+        No temp = minHeap->array[indice];
+        minHeap->array[indice] = minHeap->array[(indice - 1) / 2];
+        minHeap->array[(indice - 1) / 2] = temp;
+        indice = (indice - 1) / 2;
     }
-    lista->tam++;
 }
-
-void inserir_elementos(unsigned int tabela[], Lista *lista)
-
-
+void imprimirMinHeap(MinHeap* minHeap)
 {
-    int i;
-    No *novo;
-    for (i = 0; i < MAX; i++)
+    printf("Elementos da min-heap:\n");
+    for (int i = 0; i < minHeap->tamanho; i++)
     {
-        if (tabela[i] > 0)
-        {
-            novo = malloc(sizeof(No));
-            if (novo)
-            {
-               novo->letra = i;
-               novo->frequencia = tabela[i];
-               novo->dir = NULL;
-               novo->esq = NULL;
-               novo->prox = NULL;
-
-               ordenar_lista(lista, novo);
-            }
-            else
-            {
-                printf("\tERRO AO ALOCAR MEMÓRIA EM inserir_elementos");
-                break;
-            }
-        }
+        printf("Caracter: %c, Frequencia: %d\n", minHeap->array[i].letra, minHeap->array[i].frequencia);
     }
 }
 
-void imprime_lista_encadeada(Lista *lista){
-    No *aux;
-    aux = lista->inicio;
-    while (aux)
-    {
-        printf("\tCaracter: %c Frequencia: %d\n", aux->letra, aux->frequencia);
-        aux = aux->prox;
-    }
-    
-
-}
 
 // -------------------------Tabela-de-frequencia-----------------------------------
 
@@ -126,8 +93,7 @@ int main(int argc, char *argv[])
 
     unsigned char linha[MAX];
     unsigned int tabela_frequencia[MAX];
-    Lista lista;
-
+    //Lista lista;
 
     // -------------------------Leitura-do-Arquivo-----------------------------------
 
@@ -165,10 +131,32 @@ int main(int argc, char *argv[])
     preenche_tabela_frequencia(linha, tabela_frequencia);
     // imprime_tabela_frequancia(tabela_frequencia);
 
-    // -------------------------Lista-encadeada-e-AVBB-----------------------------------
-    cria_lista(&lista);
-    inserir_elementos(tabela_frequencia, &lista);
-    imprime_lista_encadeada(&lista);
 
+    // -------------------------Min-Heap----------------------------------
+    MinHeap *minHeap;
+
+    minHeap = criarMinHeap(MAX);
+
+    // Insere os elementos na min-heap
+    for (int i = 0; i < MAX; i++)
+    {
+        if (tabela_frequencia[i] > 0)
+        {
+            No novo;
+            novo.letra = i;
+            novo.frequencia = tabela_frequencia[i];
+            inserirElemento(minHeap, novo);
+        }
+    }
+    
+    imprimirMinHeap(minHeap);
+   
     return 0;
 }
+
+
+
+
+
+
+
