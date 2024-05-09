@@ -4,62 +4,168 @@
 
 #define MAX 256 // ASCII
 
-
 // -------------------------Min-Heap-----------------------------------
 typedef struct
 {
     unsigned char letra;
     int frequencia;
+
 } No;
 
 typedef struct
 {
-    No *array;
+    No *lista;
     int tamanho;
     int capacidade;
-} MinHeap;
+} minHeap;
 
-MinHeap* criarMinHeap(int capacidade)
+// Inicializa o minHeap
+minHeap *constroi_minHeap(int capacidade)
 {
-    MinHeap* minHeap = (MinHeap*)malloc(sizeof(MinHeap));
-    minHeap->tamanho = 0;
-    minHeap->capacidade = capacidade;
-    minHeap->array = (No*)malloc(capacidade * sizeof(No));
-    return minHeap;
+    minHeap *heap = (minHeap *)malloc(sizeof(minHeap));
+    heap->capacidade = capacidade;
+    heap->tamanho = 0;
+    heap->lista = (No *)malloc(capacidade * sizeof(No));
+    return heap;
 }
 
-void inserirElemento(MinHeap* minHeap, No no)
+// Libera memoria
+void libera_minHeap(minHeap *minHeap)
 {
-    if (minHeap->tamanho == minHeap->capacidade)
-    {
-        printf("A min-heap está cheia\n");
-        return;
-    }
-
-    // Insere o novo nó no final do array
-    int indice = minHeap->tamanho;
-    minHeap->array[indice] = no;
-    minHeap->tamanho++;
-
-    // Garante que a propriedade da min-heap seja mantida
-    while (indice != 0 && minHeap->array[indice].frequencia < minHeap->array[(indice - 1) / 2].frequencia)
-    {
-        // Troca o novo nó com seu pai até que a propriedade da min-heap seja restaurada
-        No temp = minHeap->array[indice];
-        minHeap->array[indice] = minHeap->array[(indice - 1) / 2];
-        minHeap->array[(indice - 1) / 2] = temp;
-        indice = (indice - 1) / 2;
-    }
+    free(minHeap->lista);
+    free(minHeap);
 }
-void imprimirMinHeap(MinHeap* minHeap)
+
+// Troca a com b
+void troca(No *a, No *b)
+{
+    No temp = *a;
+    *a = *b;
+    *b = temp;
+}
+void imprimirMinHeap(minHeap *minHeap)
 {
     printf("Elementos da min-heap:\n");
     for (int i = 0; i < minHeap->tamanho; i++)
     {
-        printf("Caracter: %c, Frequencia: %d\n", minHeap->array[i].letra, minHeap->array[i].frequencia);
+        printf("Caracter: %c, Frequencia: %d\n", minHeap->lista[i].letra, minHeap->lista[i].frequencia);
+    }
+}
+// Função desce
+void desce(minHeap *minHeap, int i)
+{
+    int esquerdo = 2 * i + 1;
+    int direito = 2 * i + 2;
+    int menor = i;
+
+    if (esquerdo < minHeap->tamanho && minHeap->lista[esquerdo].frequencia < minHeap->lista[i].frequencia)
+        menor = esquerdo;
+    if (direito < minHeap->tamanho && minHeap->lista[direito].frequencia < minHeap->lista[menor].frequencia)
+        menor = direito;
+
+    if (menor != i)
+    {
+        troca(&minHeap->lista[i], &minHeap->lista[menor]);
+        desce(minHeap, menor);
     }
 }
 
+// sobe
+void sobe(minHeap *minHeap, int i)
+{
+
+    int pai = (i - 1) / 2;
+
+    while (i > 0 && minHeap->lista[i].frequencia < minHeap->lista[pai].frequencia)
+    {
+        troca(&minHeap->lista[i], &minHeap->lista[pai]);
+        i = pai;
+        pai = (i - 1) / 2;
+    }
+}
+
+void insere(minHeap *minHeap, No *novo)
+{
+    if (minHeap->tamanho < minHeap->capacidade)
+    {
+        No *novo_no = (No *)malloc(sizeof(No));
+        novo_no->letra = novo->letra;
+        novo_no->frequencia = novo->frequencia;
+        minHeap->lista[minHeap->tamanho] = *novo_no;
+        minHeap->tamanho++;
+        sobe(minHeap, minHeap->tamanho-1);
+        free(novo_no); // Liberar memória alocada
+    }
+}
+
+int extrai_Min(minHeap *minHeap)
+{
+
+    int min = minHeap->lista[0].frequencia;
+    minHeap->lista[0] = minHeap->lista[minHeap->tamanho - 1];
+    minHeap->tamanho--;
+    desce(minHeap, 0);
+    printf("dentro da extrai \n");
+    imprimirMinHeap(minHeap);
+    return min;
+}
+
+int retorna_min(minHeap *minHeap)
+{
+    return minHeap->lista[0].frequencia;
+}
+
+// -------------------------Árvore-----------------------------------
+
+minHeap *montar_arvore(minHeap *heap)
+{
+    minHeap *primeiro, *segundo, *novo;
+    while (heap->tamanho > 1)
+    {
+
+        minHeap *primeiro = (minHeap *)malloc(sizeof(minHeap));
+        minHeap *segundo = (minHeap *)malloc(sizeof(minHeap));
+        primeiro->lista = (No *)malloc(sizeof(No));
+        primeiro->lista->letra = heap->lista[0].letra;
+        primeiro->lista->frequencia = heap->lista[0].frequencia;
+        primeiro->tamanho = 1;
+
+        // printf("Depois de remover o primeiro \n");
+        // imprimirMinHeap(heap);
+
+        segundo->lista = (No *)malloc(sizeof(No));
+        segundo->lista->letra = heap->lista[1].letra;
+        segundo->lista->frequencia = heap->lista[1].frequencia;
+        segundo->tamanho = 1;
+
+
+        novo = (minHeap *)malloc(sizeof(minHeap));
+        novo->lista = (No *)malloc(sizeof(No));
+        if (novo)
+        {
+            novo->lista->letra = '+';
+            novo->lista->frequencia = primeiro->lista->frequencia + segundo->lista->frequencia;
+            insere(heap, novo->lista);
+            
+        }
+        else
+        {
+            printf("\n\t ERRO ao alocar memória");
+            break;
+        }
+       
+        extrai_Min(heap);
+        extrai_Min(heap);
+        free(primeiro->lista);
+        free(primeiro);
+        free(segundo->lista);
+        free(segundo);
+        free(novo->lista);
+        free(novo);
+    }
+
+    return heap;
+}
 
 // -------------------------Tabela-de-frequencia-----------------------------------
 
@@ -93,7 +199,7 @@ int main(int argc, char *argv[])
 
     unsigned char linha[MAX];
     unsigned int tabela_frequencia[MAX];
-    //Lista lista;
+    // Lista lista;
 
     // -------------------------Leitura-do-Arquivo-----------------------------------
 
@@ -131,11 +237,10 @@ int main(int argc, char *argv[])
     preenche_tabela_frequencia(linha, tabela_frequencia);
     // imprime_tabela_frequancia(tabela_frequencia);
 
-
     // -------------------------Min-Heap----------------------------------
-    MinHeap *minHeap;
+    minHeap *minHeap;
 
-    minHeap = criarMinHeap(MAX);
+    minHeap = constroi_minHeap(MAX);
 
     // Insere os elementos na min-heap
     for (int i = 0; i < MAX; i++)
@@ -145,18 +250,13 @@ int main(int argc, char *argv[])
             No novo;
             novo.letra = i;
             novo.frequencia = tabela_frequencia[i];
-            inserirElemento(minHeap, novo);
+            insere(minHeap, &novo);
         }
     }
-    
+    // -------------------------Arvore----------------------------------
+    montar_arvore(minHeap);
+    printf("dentro da Main \n");
     imprimirMinHeap(minHeap);
-   
+
     return 0;
 }
-
-
-
-
-
-
-

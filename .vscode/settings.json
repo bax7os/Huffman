@@ -57,6 +57,9 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
-    "stdlib.h": "c"
+    "stdlib.h": "c",
+    "array": "c",
+    "initializer_list": "c",
+    "utility": "c"
   }
 }
