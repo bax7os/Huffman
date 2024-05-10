@@ -5,166 +5,82 @@
 #define MAX 256 // ASCII
 
 // -------------------------Min-Heap-----------------------------------
-typedef struct
+typedef struct No
 {
     unsigned char letra;
     int frequencia;
+    struct No*esquerdo;
+    struct No*direito;
 
 } No;
 
-typedef struct
-{
-    No *lista;
-    int tamanho;
-    int capacidade;
-} minHeap;
-
-// Inicializa o minHeap
-minHeap *constroi_minHeap(int capacidade)
-{
-    minHeap *heap = (minHeap *)malloc(sizeof(minHeap));
-    heap->capacidade = capacidade;
-    heap->tamanho = 0;
-    heap->lista = (No *)malloc(capacidade * sizeof(No));
-    return heap;
+No* cria_no(unsigned char letra, int frequencia){
+    No* newno = (No*)malloc(sizeof(No));
+    newno->letra = letra;
+    newno->frequencia = frequencia;
+    newno->direito = NULL;
+    newno->esquerdo = NULL;
+    return newno;
 }
 
-// Libera memoria
-void libera_minHeap(minHeap *minHeap)
+void insere(No** minHeap, int *tamanho, No* newno)
 {
-    free(minHeap->lista);
-    free(minHeap);
-}
-
-// Troca a com b
-void troca(No *a, No *b)
-{
-    No temp = *a;
-    *a = *b;
-    *b = temp;
-}
-void imprimirMinHeap(minHeap *minHeap)
-{
-    printf("Elementos da min-heap:\n");
-    for (int i = 0; i < minHeap->tamanho; i++)
-    {
-        printf("Caracter: %c, Frequencia: %d\n", minHeap->lista[i].letra, minHeap->lista[i].frequencia);
+    int i = ++(*tamanho);
+    while(i>1 && newno->frequencia<minHeap[i/2]->frequencia){
+        minHeap[i]=minHeap[i/2];
+        i=i/2;
     }
-}
-// Função desce
-void desce(minHeap *minHeap, int i)
-{
-    int esquerdo = 2 * i + 1;
-    int direito = 2 * i + 2;
-    int menor = i;
-
-    if (esquerdo < minHeap->tamanho && minHeap->lista[esquerdo].frequencia < minHeap->lista[i].frequencia)
-        menor = esquerdo;
-    if (direito < minHeap->tamanho && minHeap->lista[direito].frequencia < minHeap->lista[menor].frequencia)
-        menor = direito;
-
-    if (menor != i)
-    {
-        troca(&minHeap->lista[i], &minHeap->lista[menor]);
-        desce(minHeap, menor);
-    }
+    minHeap[i]=newno;
 }
 
-// sobe
-void sobe(minHeap *minHeap, int i)
-{
-
-    int pai = (i - 1) / 2;
-
-    while (i > 0 && minHeap->lista[i].frequencia < minHeap->lista[pai].frequencia)
-    {
-        troca(&minHeap->lista[i], &minHeap->lista[pai]);
-        i = pai;
-        pai = (i - 1) / 2;
-    }
-}
-
-void insere(minHeap *minHeap, No *novo)
-{
-    if (minHeap->tamanho < minHeap->capacidade)
-    {
-        No *novo_no = (No *)malloc(sizeof(No));
-        novo_no->letra = novo->letra;
-        novo_no->frequencia = novo->frequencia;
-        minHeap->lista[minHeap->tamanho] = *novo_no;
-        minHeap->tamanho++;
-        sobe(minHeap, minHeap->tamanho-1);
-        free(novo_no); // Liberar memória alocada
-    }
-}
-
-int extrai_Min(minHeap *minHeap)
-{
-
-    int min = minHeap->lista[0].frequencia;
-    minHeap->lista[0] = minHeap->lista[minHeap->tamanho - 1];
-    minHeap->tamanho--;
-    desce(minHeap, 0);
-    printf("dentro da extrai \n");
-    imprimirMinHeap(minHeap);
-    return min;
-}
-
-int retorna_min(minHeap *minHeap)
-{
-    return minHeap->lista[0].frequencia;
-}
-
-// -------------------------Árvore-----------------------------------
-
-minHeap *montar_arvore(minHeap *heap)
-{
-    minHeap *primeiro, *segundo, *novo;
-    while (heap->tamanho > 1)
-    {
-
-        minHeap *primeiro = (minHeap *)malloc(sizeof(minHeap));
-        minHeap *segundo = (minHeap *)malloc(sizeof(minHeap));
-        primeiro->lista = (No *)malloc(sizeof(No));
-        primeiro->lista->letra = heap->lista[0].letra;
-        primeiro->lista->frequencia = heap->lista[0].frequencia;
-        primeiro->tamanho = 1;
-
-        // printf("Depois de remover o primeiro \n");
-        // imprimirMinHeap(heap);
-
-        segundo->lista = (No *)malloc(sizeof(No));
-        segundo->lista->letra = heap->lista[1].letra;
-        segundo->lista->frequencia = heap->lista[1].frequencia;
-        segundo->tamanho = 1;
-
-
-        novo = (minHeap *)malloc(sizeof(minHeap));
-        novo->lista = (No *)malloc(sizeof(No));
-        if (novo)
-        {
-            novo->lista->letra = '+';
-            novo->lista->frequencia = primeiro->lista->frequencia + segundo->lista->frequencia;
-            insere(heap, novo->lista);
-            
+No* extrai_Min(No** minheap, int *tamanho){
+    No* menor_no = minheap[1];
+    No* ultimo_no = minheap[(*tamanho)--];
+    int i = 1;
+    int filho = 2*i; 
+    while(i*2 <= *tamanho){
+        filho = 2*i;
+        if(filho != *tamanho && minheap[filho+1]->frequencia < minheap[filho]->frequencia){
+            filho++;
         }
-        else
-        {
-            printf("\n\t ERRO ao alocar memória");
+        if(ultimo_no->frequencia > minheap[filho]->frequencia){
+            minheap[i] = minheap[filho];
+        }else{
             break;
         }
-       
-        extrai_Min(heap);
-        extrai_Min(heap);
-        free(primeiro->lista);
-        free(primeiro);
-        free(segundo->lista);
-        free(segundo);
-        free(novo->lista);
-        free(novo);
+        i = filho;
     }
+    minheap[i] = ultimo_no;
+    return menor_no;
+}
 
-    return heap;
+
+
+// -------------------------Árvore-----------------------------------
+No* montar_arvore(unsigned char letra[], int frequencia[], int n){
+    No* minheap[n+1];
+    int tamanho = 0;
+    for (int i = 0; i < n; i++){
+        No* newno = cria_no(letra[i], frequencia[i]);
+        insere(minheap, &tamanho, newno);
+    }
+    while (tamanho>1){
+        No* filho_esquerdo = extrai_Min(minheap, &tamanho);
+        No* filho_direito = extrai_Min(minheap, &tamanho);
+        No* no_interno = cria_no('\0', filho_esquerdo->frequencia + filho_direito->frequencia);
+        no_interno->esquerdo = filho_esquerdo;
+        no_interno->direito = filho_direito;
+        insere(minheap, &tamanho, no_interno); // Inserir o nó interno de volta ao heap mínimo
+    }
+    return extrai_Min(minheap, &tamanho);
+}
+
+void imprime_arvore(No* raiz) {
+    if (raiz != NULL) {
+        printf("%c:%d\n", raiz->letra, raiz->frequencia);
+        imprime_arvore(raiz->esquerdo);
+        imprime_arvore(raiz->direito);
+    }
 }
 
 // -------------------------Tabela-de-frequencia-----------------------------------
@@ -177,7 +93,7 @@ void inicializa_tabela_frequencia(unsigned int tabela[])
 
 void preenche_tabela_frequencia(unsigned char texto[], unsigned int tabela[])
 {
-    int compare = 0;
+    
     int i = 0;
     while (texto[i] != '\0')
     {
@@ -238,25 +154,24 @@ int main(int argc, char *argv[])
     // imprime_tabela_frequancia(tabela_frequencia);
 
     // -------------------------Min-Heap----------------------------------
-    minHeap *minHeap;
 
-    minHeap = constroi_minHeap(MAX);
+
 
     // Insere os elementos na min-heap
+    unsigned char letra[MAX];
+    int frequencia[MAX];
+    int contador = 0;
+
     for (int i = 0; i < MAX; i++)
     {
-        if (tabela_frequencia[i] > 0)
-        {
-            No novo;
-            novo.letra = i;
-            novo.frequencia = tabela_frequencia[i];
-            insere(minHeap, &novo);
+        if (tabela_frequencia[i] > 0){
+        letra[contador] = i;
+        frequencia[contador] = tabela_frequencia[i];            
+        contador++;
         }
     }
-    // -------------------------Arvore----------------------------------
-    montar_arvore(minHeap);
-    printf("dentro da Main \n");
-    imprimirMinHeap(minHeap);
 
+    No* raiz = montar_arvore(letra, frequencia, contador);
+    imprime_arvore(raiz);
     return 0;
 }

@@ -185,3 +185,31 @@ void heapify(MinHeap* minHeap, int indice)
     }
     
     imprimirMinHeap(minHeap);
+
+
+
+
+
+
+
+
+
+    minHeap *primeiro = (minHeap *)malloc(sizeof(minHeap));
+        minHeap *segundo = (minHeap *)malloc(sizeof(minHeap));
+        primeiro->lista = (No *)malloc(sizeof(No));
+        primeiro->lista->letra = heap->lista[0].letra;
+        primeiro->lista->frequencia = heap->lista[0].frequencia;
+        primeiro->esquerda = NULL;
+        primeiro->direita = NULL;
+        primeiro->tamanho = 1;
+
+        // printf("Depois de remover o primeiro \n");
+        // imprimirMinHeap(heap);
+
+        segundo->lista = (No *)malloc(sizeof(No));
+        segundo->lista->letra = heap->lista[1].letra;
+        segundo->lista->frequencia = heap->lista[1].frequencia;
+        segundo->esquerda = NULL;
+        segundo->direita = NULL;
+
+        segundo->tamanho = 1;
