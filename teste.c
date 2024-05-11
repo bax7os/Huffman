@@ -1,103 +1,60 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
+int main(int argc, char *argv[]) {
+    unsigned char linha[MAX];
+    unsigned int tabela_frequencia[MAX];
 
-typedef struct {
-    int *lista;
-    int tamanho;
-    int capacidade;
-} minHeap;
-
-
-
-
-
-//Inicializa o minHeap
-minHeap* constroi_minHeap(int capacidade) {
-    minHeap *heap = (minHeap*)malloc(sizeof(minHeap));
-    heap->capacidade = capacidade;
-    heap->tamanho = 0;
-    heap->lista = (int*)malloc(capacidade * sizeof(int));
-    return heap;
-}
-
-
-void libera_minHeap(minHeap *minHeap) {
-    free(minHeap->lista);
-    free(minHeap);
-}
-
-void troca(int *a, int *b) {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-void desce(minHeap *minHeap, int i) {
-    int esquerdo = 2 * i + 1;
-    int direito = 2 * i + 2;
-    int menor = i;
-
-    if (esquerdo < minHeap->tamanho && minHeap->array[left] < minHeap->array[i])
-        smallest = left;
-    if (right < minHeap->size && minHeap->array[right] < minHeap->array[smallest])
-        smallest = right;
-
-    if (smallest != i) {
-        swap(&minHeap->array[i], &minHeap->array[smallest]);
-        minHeapifyDown(minHeap, smallest);
+    if (argc != 2) {
+        printf("Uso: %s <nome_do_arquivo>\n", argv[0]);
+        return 1;
     }
-}
 
-void minHeapifyUp(minHeap *minHeap, int i) {
-    int parent = (i - 1) / 2;
+    FILE *arquivo;
+    arquivo = fopen(argv[1], "r");
 
-    while (i > 0 && minHeap->array[i] < minHeap->array[parent]) {
-        swap(&minHeap->array[i], &minHeap->array[parent]);
-        i = parent;
-        parent = (i - 1) / 2;
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return 1;
     }
-}
 
-void insert(minHeap *minHeap, int key) {
-    if (minHeap->size < minHeap->capacity) {
-        minHeap->array[minHeap->size] = key;
-        minHeap->size++;
-        minHeapifyUp(minHeap, minHeap->size - 1);
+    fgets(linha, MAX, arquivo);
+    fclose(arquivo);
+
+    inicializa_tabela_frequencia(tabela_frequencia);
+    preenche_tabela_frequencia(linha, tabela_frequencia);
+
+    unsigned char letra[MAX];
+    int frequencia[MAX];
+    int contador = 0;
+
+    for (int i = 0; i < MAX; i++) {
+        if (tabela_frequencia[i] > 0){
+            letra[contador] = i;
+            frequencia[contador] = tabela_frequencia[i];            
+            contador++;
+        }
     }
-}
 
-int extractMin(minHeap *minHeap) {
-    if (minHeap->size == 0)
-        return INT_MIN;
-
-    int min = minHeap->array[0];
-    minHeap->array[0] = minHeap->array[minHeap->size - 1];
-    minHeap->size--;
-    minHeapifyDown(minHeap, 0);
-
-    return min;
-}
-
-int getMin(minHeap *minHeap) {
-    if (minHeap->size == 0)
-        return INT_MIN;
-
-    return minHeap->array[0];
-}
-
-int main() {
-    minHeap *minHeap = createminHeap(10);
-
-    insert(minHeap, 3);
-    insert(minHeap, 2);
-    insert(minHeap, 1);
-    insert(minHeap, 15);
-
-    printf("Min minHeap: %d\n", extractMin(minHeap));
-    printf("Min minHeap: %d\n", getMin(minHeap));
-
-    destroyminHeap(minHeap);
-
+    No* raiz = montar_arvore(letra, frequencia, contador);
+    TabelaHash tabela_huffman[MAX];
+    for (int i = 0; i < MAX; i++) {
+    tabela_huffman[i].codigo_huffman = NULL;
+    }
+    char *codificado;
+    preenche_tabela_huffman(raiz, tabela_huffman);
+    imprime_tabela_huffman(tabela_huffman);
+    codificado = codificar(tabela_huffman, linha);
+    printf("\n\tTexto codificado: %s\n", codificado);
     return 0;
+}
+void codificar_e_escrever(Bits *bits_saida, TabelaHash *tabela, unsigned char *texto) {
+    int i = 0;
+    while (texto[i] != '\0') {
+        char *codigo = tabela[texto[i]].codigo_huffman;
+        int j = 0;
+        while (codigo[j] != '\0') {
+            Bits_adiciona_bit(bits_saida, codigo[j] - '0'); // Converte o caractere '0' ou '1' em um número inteiro
+            j++;
+        }
+        i++;
+    }
+    Bits_descarrega(bits_saida); // Escreve qualquer bit restante no buffer
 }

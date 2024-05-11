@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "buffer.h"
 
 #define MAX 256 // ASCII
+
 
 typedef struct No {
     unsigned char letra;
@@ -107,34 +109,19 @@ void imprime_tabela_huffman(TabelaHash tabela[]) {
 }
 
 // -------------------------Codificar-----------------------------------
-int calcula_tamanho_string(char **tabela, char *texto){
-    int i, tam = 0;
-    while (texto[i] != '\0')
-    {
-        tam = tam + strlen(tabela[texto[i]]);
+void codificar_e_escrever(Bits *bits_saida, TabelaHash *tabela, unsigned char *texto) {
+    int i = 0;
+    while (texto[i] != '\0') {
+        char *codigo = tabela[texto[i]].codigo_huffman;
+        int j = 0;
+        while (codigo[j] != '\0') {
+            Bits_adiciona_bit(bits_saida, codigo[j] - '0'); // Converte o caractere '0' ou '1' em um número inteiro
+            j++;
+        }
         i++;
     }
-    return tam + 1;
+    Bits_descarrega(bits_saida); // Escreve qualquer bit restante no buffer
 }
-
-
-char* codificar(TabelaHash *tabela, unsigned char *texto){
-    int i = 0, tam = 0;
-    while (texto[i] != '\0')
-    {
-        tam = tam + strlen(tabela[texto[i]].codigo_huffman);
-        i++;
-    }
-    char *cod = calloc(tam, sizeof(char));
-    i = 0;
-    while (texto[i] != '\0')
-    {
-        strcat(cod, tabela[texto[i]].codigo_huffman);
-        i++;
-    }
-    return cod;
-}
-
 
 
 // -------------------------Tabela-de-frequencia-----------------------------------
@@ -164,25 +151,25 @@ void imprime_tabela_frequancia(unsigned int tabela[])
     }
 }
 
+
+
 int main(int argc, char *argv[]) {
     unsigned char linha[MAX];
     unsigned int tabela_frequencia[MAX];
 
-    if (argc != 2) {
-        printf("Uso: %s <nome_do_arquivo>\n", argv[0]);
+    if (argc != 3) {
+        printf("Uso: %s <nome_do_arquivo_entrada> <nome_do_arquivo_saida>\n", argv[0]);
         return 1;
     }
 
-    FILE *arquivo;
-    arquivo = fopen(argv[1], "r");
-
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo.\n");
+    FILE *arquivo_entrada = fopen(argv[1], "r");
+    if (arquivo_entrada == NULL) {
+        printf("Erro ao abrir o arquivo de entrada.\n");
         return 1;
     }
 
-    fgets(linha, MAX, arquivo);
-    fclose(arquivo);
+    fgets(linha, MAX, arquivo_entrada);
+    fclose(arquivo_entrada);
 
     inicializa_tabela_frequencia(tabela_frequencia);
     preenche_tabela_frequencia(linha, tabela_frequencia);
@@ -192,22 +179,34 @@ int main(int argc, char *argv[]) {
     int contador = 0;
 
     for (int i = 0; i < MAX; i++) {
-        if (tabela_frequencia[i] > 0){
+        if (tabela_frequencia[i] > 0) {
             letra[contador] = i;
-            frequencia[contador] = tabela_frequencia[i];            
+            frequencia[contador] = tabela_frequencia[i];
             contador++;
         }
     }
 
-    No* raiz = montar_arvore(letra, frequencia, contador);
+    No *raiz = montar_arvore(letra, frequencia, contador);
     TabelaHash tabela_huffman[MAX];
     for (int i = 0; i < MAX; i++) {
-    tabela_huffman[i].codigo_huffman = NULL;
+        tabela_huffman[i].codigo_huffman = NULL;
     }
-    char *codificado;
     preenche_tabela_huffman(raiz, tabela_huffman);
-    imprime_tabela_huffman(tabela_huffman);
-    codificado = codificar(tabela_huffman, linha);
-    printf("\n\tTexto codificado: %s\n", codificado);
+
+    FILE *arquivo_saida = fopen(argv[2], "wb"); // Abre o arquivo de saída em modo binário
+    if (arquivo_saida == NULL) {
+        printf("Erro ao abrir o arquivo de saída.\n");
+        return 1;
+    }
+
+    Bits bits_saida;
+    Bits_init(&bits_saida, arquivo_saida);
+
+    codificar_e_escrever(&bits_saida, tabela_huffman, linha);
+
+    fclose(arquivo_saida);
+
+    printf("Texto codificado e escrito no arquivo de saída.\n");
+
     return 0;
 }
