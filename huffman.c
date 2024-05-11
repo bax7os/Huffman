@@ -118,17 +118,23 @@ int calcula_tamanho_string(char **tabela, char *texto){
 }
 
 
-char* codificar(char **tabela, unsigned char *texto){
-    int i, tam = calcula_tamanho_string(tabela, texto);
-    char *cod = calloc(tam, sizeof(char));
-
+char* codificar(TabelaHash *tabela, unsigned char *texto){
+    int i = 0, tam = 0;
     while (texto[i] != '\0')
     {
-        strcat(cod, tabela[texto[i]]);
+        tam = tam + strlen(tabela[texto[i]].codigo_huffman);
+        i++;
+    }
+    char *cod = calloc(tam, sizeof(char));
+    i = 0;
+    while (texto[i] != '\0')
+    {
+        strcat(cod, tabela[texto[i]].codigo_huffman);
         i++;
     }
     return cod;
 }
+
 
 
 // -------------------------Tabela-de-frequencia-----------------------------------
