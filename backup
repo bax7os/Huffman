@@ -213,3 +213,79 @@ void heapify(MinHeap* minHeap, int indice)
         segundo->direita = NULL;
 
         segundo->tamanho = 1;
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "bits.h" // Assumindo que você tenha a classe bits.h
+
+// Definições e funções que você já implementou
+
+int main(int argc, char *argv[]) {
+    // Declarações e código existente
+
+    // Abrindo arquivos de entrada e saída
+    FILE *arquivoEntrada, *arquivoSaida;
+    arquivoEntrada = fopen(nome_arquivo, "r");
+    arquivoSaida = fopen("arquivo_compactado.bin", "wb");
+
+    // Verificando se os arquivos foram abertos corretamente
+    if (arquivoEntrada == NULL || arquivoSaida == NULL) {
+        printf("Erro ao abrir arquivos.\n");
+        return 1;
+    }
+
+    // Compactação
+    Bits out(arquivoSaida); // Inicializando objeto Bits para escrita no arquivo de saída
+
+    // Escrevendo cabeçalho (número de caracteres e tamanho do texto original)
+    out.adiciona_byte(K); // Número de caracteres do alfabeto
+    out.adiciona_int(T);  // Tamanho do texto original
+
+    // Escrevendo tabela de frequência dos caracteres
+    for (int i = 0; i < MAX; i++) {
+        if (tabela_frequencia[i] > 0) {
+            out.adiciona_byte(i);            // Escreve o caractere
+            out.adiciona_int(tabela_frequencia[i]); // Escreve a frequência
+        }
+    }
+
+    // Compactando o texto original usando os códigos de Huffman
+    // Percorra o arquivo de entrada, substituindo cada caractere pelo seu código correspondente
+    // Use o mapeamento de códigos que você criou anteriormente
+    unsigned char buffer = 0; // Buffer para armazenar os bits compactados temporariamente
+    int posicao_buffer = 0;   // Posição atual no buffer
+
+    while (fgets(linha, MAX, arquivoEntrada) != NULL) {
+        int i = 0;
+        while (linha[i] != '\0') {
+            // Escreva o código Huffman do caractere atual no buffer
+            // Use o mapeamento de códigos para obter o código Huffman do caractere
+            // Depois, escreva cada bit desse código no buffer usando a função adiciona_bit
+            unsigned char codigo = mapeamento_codigos[linha[i]];
+            for (int j = 7; j >= 0; j--) {
+                unsigned char bit = (codigo >> j) & 1;
+                buffer |= (bit << posicao_buffer);
+                posicao_buffer++;
+                if (posicao_buffer == 8) {
+                    out.adiciona_byte(buffer);
+                    buffer = 0;
+                    posicao_buffer = 0;
+                }
+            }
+            i++;
+        }
+    }
+
+    // Se ainda houver bits no buffer não escritos no arquivo, descarregue o buffer
+    if (posicao_buffer > 0) {
+        out.adiciona_byte(buffer);
+    }
+
+    // Fechando arquivos
+    fclose(arquivoEntrada);
+    fclose(arquivoSaida);
+
+    return 0;
+}

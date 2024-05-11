@@ -4,17 +4,19 @@
 
 #define MAX 256 // ASCII
 
-// -------------------------Min-Heap-----------------------------------
-typedef struct No
-{
+typedef struct No {
     unsigned char letra;
     int frequencia;
-    struct No*esquerdo;
-    struct No*direito;
-
+    struct No* esquerdo;
+    struct No* direito;
 } No;
 
-No* cria_no(unsigned char letra, int frequencia){
+typedef struct TabelaHash {
+    char *codigo_huffman;
+} TabelaHash;
+
+// -------------------------Min-Heap-----------------------------------
+No* cria_no(unsigned char letra, int frequencia) {
     No* newno = (No*)malloc(sizeof(No));
     newno->letra = letra;
     newno->frequencia = frequencia;
@@ -23,29 +25,28 @@ No* cria_no(unsigned char letra, int frequencia){
     return newno;
 }
 
-void insere(No** minHeap, int *tamanho, No* newno)
-{
+void insere(No** minHeap, int *tamanho, No* newno) {
     int i = ++(*tamanho);
-    while(i>1 && newno->frequencia<minHeap[i/2]->frequencia){
-        minHeap[i]=minHeap[i/2];
-        i=i/2;
+    while(i > 1 && newno->frequencia < minHeap[i/2]->frequencia) {
+        minHeap[i] = minHeap[i/2];
+        i = i/2;
     }
-    minHeap[i]=newno;
+    minHeap[i] = newno;
 }
 
-No* extrai_Min(No** minheap, int *tamanho){
+No* extrai_Min(No** minheap, int *tamanho) {
     No* menor_no = minheap[1];
     No* ultimo_no = minheap[(*tamanho)--];
     int i = 1;
     int filho = 2*i; 
-    while(i*2 <= *tamanho){
+    while(i*2 <= *tamanho) {
         filho = 2*i;
-        if(filho != *tamanho && minheap[filho+1]->frequencia < minheap[filho]->frequencia){
+        if(filho != *tamanho && minheap[filho+1]->frequencia < minheap[filho]->frequencia) {
             filho++;
         }
-        if(ultimo_no->frequencia > minheap[filho]->frequencia){
+        if(ultimo_no->frequencia > minheap[filho]->frequencia) {
             minheap[i] = minheap[filho];
-        }else{
+        } else {
             break;
         }
         i = filho;
@@ -54,17 +55,15 @@ No* extrai_Min(No** minheap, int *tamanho){
     return menor_no;
 }
 
-
-
 // -------------------------Árvore-----------------------------------
-No* montar_arvore(unsigned char letra[], int frequencia[], int n){
+No* montar_arvore(unsigned char letra[], int frequencia[], int n) {
     No* minheap[n+1];
     int tamanho = 0;
-    for (int i = 0; i < n; i++){
+    for (int i = 0; i < n; i++) {
         No* newno = cria_no(letra[i], frequencia[i]);
         insere(minheap, &tamanho, newno);
     }
-    while (tamanho>1){
+    while (tamanho > 1) {
         No* filho_esquerdo = extrai_Min(minheap, &tamanho);
         No* filho_direito = extrai_Min(minheap, &tamanho);
         No* no_interno = cria_no('\0', filho_esquerdo->frequencia + filho_direito->frequencia);
@@ -75,13 +74,62 @@ No* montar_arvore(unsigned char letra[], int frequencia[], int n){
     return extrai_Min(minheap, &tamanho);
 }
 
-void imprime_arvore(No* raiz) {
-    if (raiz != NULL) {
-        printf("%c:%d\n", raiz->letra, raiz->frequencia);
-        imprime_arvore(raiz->esquerdo);
-        imprime_arvore(raiz->direito);
+// -------------------------Tabela-hash-----------------------------------
+void preenche_tabela_huffman(No *raiz, TabelaHash tabela[]) {
+    static char codigo[MAX]; // Armazena temporariamente o código de Huffman
+    static int indice = 0;   // Índice atual do código de Huffman
+    if (raiz->esquerdo != NULL) {
+        codigo[indice++] = '0';
+        preenche_tabela_huffman(raiz->esquerdo, tabela);
+        indice--;
+    }
+    if (raiz->direito != NULL) {
+        codigo[indice++] = '1';
+        preenche_tabela_huffman(raiz->direito, tabela);
+        indice--;
+    }
+    if (raiz->esquerdo == NULL && raiz->direito == NULL) {
+        // Cria uma entrada na tabela hash para a letra com seu código Huffman
+        tabela[raiz->letra].codigo_huffman = (char*)malloc((indice + 1) * sizeof(char));
+        strncpy(tabela[raiz->letra].codigo_huffman, codigo, indice);
+        tabela[raiz->letra].codigo_huffman[indice] = '\0'; // Adiciona o caractere nulo no final
     }
 }
+
+
+void imprime_tabela_huffman(TabelaHash tabela[]) {
+    printf("========= Tabela de Huffman =========\n");
+    for (int i = 0; i < MAX; i++) {
+        if (tabela[i].codigo_huffman != NULL) {
+            printf(" %d : %c : %s\n", i, i, tabela[i].codigo_huffman);
+        }
+    }
+}
+
+// -------------------------Codificar-----------------------------------
+int calcula_tamanho_string(char **tabela, char *texto){
+    int i, tam = 0;
+    while (texto[i] != '\0')
+    {
+        tam = tam + strlen(tabela[texto[i]]);
+        i++;
+    }
+    return tam + 1;
+}
+
+
+char* codificar(char **tabela, unsigned char *texto){
+    int i, tam = calcula_tamanho_string(tabela, texto);
+    char *cod = calloc(tam, sizeof(char));
+
+    while (texto[i] != '\0')
+    {
+        strcat(cod, tabela[texto[i]]);
+        i++;
+    }
+    return cod;
+}
+
 
 // -------------------------Tabela-de-frequencia-----------------------------------
 
@@ -110,68 +158,50 @@ void imprime_tabela_frequancia(unsigned int tabela[])
     }
 }
 
-int main(int argc, char *argv[])
-{
-
+int main(int argc, char *argv[]) {
     unsigned char linha[MAX];
     unsigned int tabela_frequencia[MAX];
-    // Lista lista;
 
-    // -------------------------Leitura-do-Arquivo-----------------------------------
-
-    FILE *arquivo;
-    char nome_arquivo[100]; // Tamanho máximo do nome do arquivo
-
-    // Verifique se o nome do arquivo foi fornecido como argumento de linha de comando
-    if (argc != 2)
-    {
+    if (argc != 2) {
         printf("Uso: %s <nome_do_arquivo>\n", argv[0]);
         return 1;
     }
 
-    // Copie o nome do arquivo fornecido pelo usuário
-    strcpy(nome_arquivo, argv[1]);
+    FILE *arquivo;
+    arquivo = fopen(argv[1], "r");
 
-    // Abra o arquivo em modo de leitura
-    arquivo = fopen(nome_arquivo, "r");
-
-    // Verifique se o arquivo foi aberto com sucesso
-    if (arquivo == NULL)
-    {
+    if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo.\n");
         return 1;
     }
 
-    // Ler uma linha do arquivo e armazená-la em linha
     fgets(linha, MAX, arquivo);
-
-    // Feche o arquivo
     fclose(arquivo);
 
-    // -------------------------Tabela-de-frequencia-----------------------------------
     inicializa_tabela_frequencia(tabela_frequencia);
     preenche_tabela_frequencia(linha, tabela_frequencia);
-    // imprime_tabela_frequancia(tabela_frequencia);
 
-    // -------------------------Min-Heap----------------------------------
-
-
-
-    // Insere os elementos na min-heap
     unsigned char letra[MAX];
     int frequencia[MAX];
     int contador = 0;
 
-    for (int i = 0; i < MAX; i++)
-    {
+    for (int i = 0; i < MAX; i++) {
         if (tabela_frequencia[i] > 0){
-        letra[contador] = i;
-        frequencia[contador] = tabela_frequencia[i];            
-        contador++;
+            letra[contador] = i;
+            frequencia[contador] = tabela_frequencia[i];            
+            contador++;
         }
     }
 
     No* raiz = montar_arvore(letra, frequencia, contador);
-    imprime_arvore(raiz);
+    TabelaHash tabela_huffman[MAX];
+    for (int i = 0; i < MAX; i++) {
+    tabela_huffman[i].codigo_huffman = NULL;
+    }
+    char *codificado;
+    preenche_tabela_huffman(raiz, tabela_huffman);
+    imprime_tabela_huffman(tabela_huffman);
+    codificado = codificar(tabela_huffman, linha);
+    printf("\n\tTexto codificado: %s\n", codificado);
     return 0;
 }
