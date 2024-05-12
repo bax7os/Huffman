@@ -1,291 +1,306 @@
-typedef struct
-{
-    No *inicio;
-    int tam;
-} Lista;
-
-void cria_lista(Lista *lista)
-{
-
-    lista->inicio = NULL;
-    lista->tam = 0;
-}
-void ordenar_lista(Lista *lista, No *no)
-{
-    No *aux;
-    if (lista->inicio == NULL)
-    {
-        lista->inicio = no;
-        // lista->tam++;
-    }
-    else if (lista->inicio->frequencia > no->frequencia)
-    {
-        no->prox = lista->inicio;
-        lista->inicio = no;
-        // lista->tam++;
-    }
-    else
-    {
-        aux = lista->inicio;
-        while (aux->prox && aux->prox->frequencia <= no->frequencia)
-            aux = aux->prox;
-
-        no->prox = aux->prox;
-        aux->prox = no;
-        // lista->tam++;
-    }
-    lista->tam++;
-}
-
-
-{
-    while (tabela[pai(i)] < tabela[i])
-    {
-        troca(&tabela[i], &tabela[pai(i)]);
-        i = pai(i);
-    }
-}
-
-void imprime_lista_encadeada(Lista *lista)
-{
-    No *aux;
-    aux = lista->inicio;
-    while (aux)
-    {
-        printf("\tCaracter: %c Frequencia: %d\n", aux->letra, aux->frequencia);
-        aux = aux->prox;
-    }
-}
- // -------------------------Lista-encadeada-e-AVBB-----------------------------------
-    cria_lista(&lista);
-    inserir_elementos(tabela_frequencia, &lista);
-    imprime_lista_encadeada(&lista);
-
-
-void inserir_elementos(unsigned int tabela[], Lista *lista)
-
-{
-    int i;
-    No *novo;
-    for (i = 0; i < MAX; i++)
-    {
-        if (tabela[i] > 0)
-        {
-            novo = malloc(sizeof(No));
-            if (novo)
-            {
-                novo->letra = i;
-                novo->frequencia = tabela[i];
-                novo->dir = NULL;
-                novo->esq = NULL;
-                novo->prox = NULL;
-
-                ordenar_lista(lista, novo);
-            }
-            else
-            {
-                printf("\tERRO AO ALOCAR MEMÓRIA EM inserir_elementos");
-                break;
-            }
-        }
-    }
-}
-------------------------------------------------------------------------------------
-typedef struct
-{
-    No *array;
-    int tamanho;
-    int capacidade;
-} MinHeap;
-
-// Funções para a min-heap
-MinHeap* criarMinHeap(int capacidade);
-void inserirElemento(MinHeap* minHeap, No no);
-void heapify(MinHeap* minHeap, int indice);
-
-
-void imprimirMinHeap(MinHeap* minHeap)
-{
-    printf("Elementos da min-heap:\n");
-    for (int i = 0; i < minHeap->tamanho; i++)
-    {
-        printf("Caracter: %c, Frequencia: %d\n", minHeap->array[i].letra, minHeap->array[i].frequencia);
-    }
-}
-
-MinHeap* criarMinHeap(int capacidade)
-{
-    MinHeap* minHeap = (MinHeap*)malloc(sizeof(MinHeap));
-    minHeap->tamanho = 0;
-    minHeap->capacidade = capacidade;
-    minHeap->array = (No*)malloc(capacidade * sizeof(No));
-    return minHeap;
-}
-
-void inserirElemento(MinHeap* minHeap, No no)
-{
-    if (minHeap->tamanho == minHeap->capacidade)
-    {
-        printf("A min-heap está cheia\n");
-        return;
-    }
-
-    // Insere o novo nó no final do array
-    int indice = minHeap->tamanho;
-    minHeap->array[indice] = no;
-    minHeap->tamanho++;
-
-    // Garante que a propriedade da min-heap seja mantida
-    while (indice != 0 && minHeap->array[indice].frequencia < minHeap->array[(indice - 1) / 2].frequencia)
-    {
-        // Troca o novo nó com seu pai até que a propriedade da min-heap seja restaurada
-        No temp = minHeap->array[indice];
-        minHeap->array[indice] = minHeap->array[(indice - 1) / 2];
-        minHeap->array[(indice - 1) / 2] = temp;
-        indice = (indice - 1) / 2;
-    }
-}
-
-void heapify(MinHeap* minHeap, int indice)
-{
-    int menor = indice;
-    int esquerda = 2 * indice + 1;
-    int direita = 2 * indice + 2;
-
-    if (esquerda < minHeap->tamanho && minHeap->array[esquerda].frequencia < minHeap->array[menor].frequencia)
-        menor = esquerda;
-
-    if (direita < minHeap->tamanho && minHeap->array[direita].frequencia < minHeap->array[menor].frequencia)
-        menor = direita;
-
-    if (menor != indice)
-    {
-        // Troca o nó atual com o menor dos filhos
-        No temp = minHeap->array[indice];
-        minHeap->array[indice] = minHeap->array[menor];
-        minHeap->array[menor] = temp;
-        heapify(minHeap, menor);
-    }
-}
-
-    MinHeap *minHeap;
-
-    minHeap = criarMinHeap(MAX);
-
-    // Insere os elementos na min-heap
-    for (int i = 0; i < MAX; i++)
-    {
-        if (tabela_frequencia[i] > 0)
-        {
-            No novo;
-            novo.letra = i;
-            novo.frequencia = tabela_frequencia[i];
-            inserirElemento(minHeap, novo);
-        }
-    }
-    
-    imprimirMinHeap(minHeap);
-
-
-
-
-
-
-
-
-
-    minHeap *primeiro = (minHeap *)malloc(sizeof(minHeap));
-        minHeap *segundo = (minHeap *)malloc(sizeof(minHeap));
-        primeiro->lista = (No *)malloc(sizeof(No));
-        primeiro->lista->letra = heap->lista[0].letra;
-        primeiro->lista->frequencia = heap->lista[0].frequencia;
-        primeiro->esquerda = NULL;
-        primeiro->direita = NULL;
-        primeiro->tamanho = 1;
-
-        // printf("Depois de remover o primeiro \n");
-        // imprimirMinHeap(heap);
-
-        segundo->lista = (No *)malloc(sizeof(No));
-        segundo->lista->letra = heap->lista[1].letra;
-        segundo->lista->frequencia = heap->lista[1].frequencia;
-        segundo->esquerda = NULL;
-        segundo->direita = NULL;
-
-        segundo->tamanho = 1;
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bits.h" // Assumindo que você tenha a classe bits.h
+#include "buffer.h"
 
-// Definições e funções que você já implementou
+#define MAX 256 // ASCII
+
+typedef struct No
+{
+    unsigned char letra;
+    int frequencia;
+    struct No *esquerdo;
+    struct No *direito;
+} No;
+
+typedef struct TabelaHash
+{
+    char *codigo_huffman;
+    int ordem;
+} TabelaHash;
+
+// -------------------------Min-Heap-----------------------------------
+No *cria_no(unsigned char letra, int frequencia)
+{
+    No *newno = (No *)malloc(sizeof(No));
+    newno->letra = letra;
+    newno->frequencia = frequencia;
+    newno->direito = NULL;
+    newno->esquerdo = NULL;
+    return newno;
+}
+
+void insere(No **minHeap, int *tamanho, No *newno)
+{
+    int i = ++(*tamanho);
+    while (i > 1 && newno->frequencia < minHeap[i / 2]->frequencia)
+    {
+        minHeap[i] = minHeap[i / 2];
+        i = i / 2;
+    }
+    minHeap[i] = newno;
+}
+
+No *extrai_Min(No **minheap, int *tamanho)
+{
+    No *menor_no = minheap[1];
+    No *ultimo_no = minheap[(*tamanho)--];
+    int i = 1;
+    int filho = 2 * i;
+    while (i * 2 <= *tamanho)
+    {
+        filho = 2 * i;
+        if (filho != *tamanho && minheap[filho + 1]->frequencia < minheap[filho]->frequencia)
+        {
+            filho++;
+        }
+        if (ultimo_no->frequencia > minheap[filho]->frequencia)
+        {
+            minheap[i] = minheap[filho];
+        }
+        else
+        {
+            break;
+        }
+        i = filho;
+    }
+    minheap[i] = ultimo_no;
+    return menor_no;
+}
+
+// -------------------------Árvore-----------------------------------
+No *montar_arvore(unsigned char letra[], int frequencia[], int n)
+{
+    No *minheap[n + 1];
+    int tamanho = 0;
+    for (int i = 0; i < n; i++)
+    {
+        No *newno = cria_no(letra[i], frequencia[i]);
+        insere(minheap, &tamanho, newno);
+    }
+    while (tamanho > 1)
+    {
+        No *filho_esquerdo = extrai_Min(minheap, &tamanho);
+        No *filho_direito = extrai_Min(minheap, &tamanho);
+        No *no_interno = cria_no('\0', filho_esquerdo->frequencia + filho_direito->frequencia);
+        no_interno->esquerdo = filho_esquerdo;
+        no_interno->direito = filho_direito;
+        insere(minheap, &tamanho, no_interno); // Inserir o nó interno de volta ao heap mínimo
+    }
+    return extrai_Min(minheap, &tamanho);
+}
+void percorrer_arvore(No *raiz, int *vetor, int *indice)
+{
+    if (raiz != NULL)
+    {
+        // Se o nó atual é uma folha (não tem filhos), salva 1
+        if (raiz->esquerdo == NULL && raiz->direito == NULL)
+        {
+            vetor[*indice] = 1;
+            (*indice)++;
+        }
+        // Se o nó atual é interno (tem pelo menos um filho), salva 0
+        else
+        {
+            vetor[*indice] = 0;
+            (*indice)++;
+        }
+
+        // Continua percorrendo a árvore
+        percorrer_arvore(raiz->esquerdo, vetor, indice);
+        percorrer_arvore(raiz->direito, vetor, indice);
+    }
+}
+void imprime_vetor(int *vetor, int tamanho)
+{
+    for (int i = 0; i < tamanho; i++)
+    {
+        printf("%d ", vetor[i]);
+    }
+    printf("\n");
+}
+
+
+// -------------------------Tabela-hash-----------------------------------
+
+void preenche_tabela_huffman(No *raiz, TabelaHash tabela[])
+{
+    static char codigo[MAX]; // Armazena temporariamente o código de Huffman
+
+    static int indice, i = 0;   // Índice atual do código de Huffman
+    if (raiz->esquerdo != NULL)
+    {
+        codigo[indice++] = '0';
+   
+    
+        preenche_tabela_huffman(raiz->esquerdo, tabela);
+
+        indice--;
+    }
+    if (raiz->direito != NULL)
+    {
+        codigo[indice++] = '1';
+     
+        preenche_tabela_huffman(raiz->direito, tabela);
+        indice--;
+    }
+    if (raiz->esquerdo == NULL && raiz->direito == NULL)
+    {
+        // Cria uma entrada na tabela hash para a letra com seu código Huffman
+       
+        tabela[raiz->letra].codigo_huffman = (char *)malloc((indice + 1) * sizeof(char));
+        strncpy(tabela[raiz->letra].codigo_huffman, codigo, indice);
+        tabela[raiz->letra].codigo_huffman[indice] = '\0'; // Adiciona o caractere nulo no final
+     
+        
+    }
+
+}
+
+void imprime_tabela_huffman(TabelaHash tabela[])
+{
+    printf("========= Tabela de Huffman =========\n");
+    for (int i = 0; i < MAX; i++)
+    {
+        if (tabela[i].codigo_huffman != NULL)
+        {
+            printf(" %d : %c : %s\n", i, i, tabela[i].codigo_huffman);
+        }
+    }
+}
+
+
+// -------------------------Codificar-----------------------------------
+char* codificar(TabelaHash *tabela, unsigned char *texto){
+    int i = 0, tam = 0;
+    while (texto[i] != '\0')
+    {
+        tam = tam + strlen(tabela[texto[i]].codigo_huffman);
+        i++;
+    }
+    char *cod = calloc(tam, sizeof(char));
+
+    i = 0;
+    while (texto[i] != '\0')
+    {
+        strcat(cod, tabela[texto[i]].codigo_huffman);
+        i++;
+    }
+    return cod;
+}
+
+// -------------------------Decodificar-------------------------------------------
+char* decodificar(unsigned char texto[], No *raiz){
+    int i = 0;
+    No *aux = raiz;
+    char temp[2];
+    char *decodificado = calloc(strlen(texto), sizeof(char));
+    while (texto[i] != '\0')
+    {
+        if (texto[i] == '0')
+        {
+            aux = aux->esquerdo;
+
+        }else{
+            aux = aux->direito;
+        }
+        if (aux->esquerdo == NULL && aux->direito == NULL)
+        {
+            temp[0] = aux->letra;
+            temp[1] = '\0';
+            strcat(decodificado, temp);
+            aux = raiz;
+        }
+        
+        i++;
+        
+    }
+    return decodificado;
+    
+}
+
+
+// -------------------------Tabela-de-frequencia-----------------------------------
+
+void inicializa_tabela_frequencia(unsigned int tabela[])
+{
+    for (int i = 0; i < MAX; i++)
+        tabela[i] = 0;
+}
+
+void preenche_tabela_frequencia(unsigned char texto[], unsigned int tabela[])
+{
+
+    int i = 0;
+    while (texto[i] != '\0')
+    {
+        tabela[texto[i]]++;
+        i++;
+    }
+}
+
+void imprime_tabela_frequancia(unsigned int tabela[])
+{
+    for (int i = 0; i < MAX; i++)
+    {
+        printf("\t%d = %d = %c\n", i, tabela[i], i);
+    }
+}
 
 int main(int argc, char *argv[]) {
-    // Declarações e código existente
-
-    // Abrindo arquivos de entrada e saída
-    FILE *arquivoEntrada, *arquivoSaida;
-    arquivoEntrada = fopen(nome_arquivo, "r");
-    arquivoSaida = fopen("arquivo_compactado.bin", "wb");
-
-    // Verificando se os arquivos foram abertos corretamente
-    if (arquivoEntrada == NULL || arquivoSaida == NULL) {
-        printf("Erro ao abrir arquivos.\n");
+    unsigned char linha[MAX];
+    unsigned int tabela_frequencia[MAX];
+    if (argc != 2) {
+        printf("Uso: %s <nome_do_arquivo>\n", argv[0]);
         return 1;
     }
-
-    // Compactação
-    Bits out(arquivoSaida); // Inicializando objeto Bits para escrita no arquivo de saída
-
-    // Escrevendo cabeçalho (número de caracteres e tamanho do texto original)
-    out.adiciona_byte(K); // Número de caracteres do alfabeto
-    out.adiciona_int(T);  // Tamanho do texto original
-
-    // Escrevendo tabela de frequência dos caracteres
+    FILE *arquivo;
+    arquivo = fopen(argv[1], "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return 1;
+    }
+    fgets(linha, MAX, arquivo);
+    fclose(arquivo);
+    inicializa_tabela_frequencia(tabela_frequencia);
+    preenche_tabela_frequencia(linha, tabela_frequencia);
+    unsigned char letra[MAX];
+    int frequencia[MAX];
+    int contador = 0;
     for (int i = 0; i < MAX; i++) {
-        if (tabela_frequencia[i] > 0) {
-            out.adiciona_byte(i);            // Escreve o caractere
-            out.adiciona_int(tabela_frequencia[i]); // Escreve a frequência
+        if (tabela_frequencia[i] > 0){
+            letra[contador] = i;
+            frequencia[contador] = tabela_frequencia[i];            
+            contador++;
         }
     }
-
-    // Compactando o texto original usando os códigos de Huffman
-    // Percorra o arquivo de entrada, substituindo cada caractere pelo seu código correspondente
-    // Use o mapeamento de códigos que você criou anteriormente
-    unsigned char buffer = 0; // Buffer para armazenar os bits compactados temporariamente
-    int posicao_buffer = 0;   // Posição atual no buffer
-
-    while (fgets(linha, MAX, arquivoEntrada) != NULL) {
-        int i = 0;
-        while (linha[i] != '\0') {
-            // Escreva o código Huffman do caractere atual no buffer
-            // Use o mapeamento de códigos para obter o código Huffman do caractere
-            // Depois, escreva cada bit desse código no buffer usando a função adiciona_bit
-            unsigned char codigo = mapeamento_codigos[linha[i]];
-            for (int j = 7; j >= 0; j--) {
-                unsigned char bit = (codigo >> j) & 1;
-                buffer |= (bit << posicao_buffer);
-                posicao_buffer++;
-                if (posicao_buffer == 8) {
-                    out.adiciona_byte(buffer);
-                    buffer = 0;
-                    posicao_buffer = 0;
-                }
-            }
-            i++;
-        }
+    No* raiz = montar_arvore(letra, frequencia, contador);
+    TabelaHash tabela_huffman[MAX];
+    for (int i = 0; i < MAX; i++) {
+    tabela_huffman[i].codigo_huffman = NULL;
     }
+    char *codificado;
+    char *decodificado;
+    int temp = MAX;
+    preenche_tabela_huffman(raiz, tabela_huffman);
+    imprime_tabela_huffman(tabela_huffman);
+    int vetor[MAX];
+    int indice = 0;
+    percorrer_arvore(raiz, vetor, &indice);
+    imprime_vetor(vetor, indice);
+    codificado = codificar(tabela_huffman, linha);
+    printf("\n\tTexto codificado: %s\n", codificado);
 
-    // Se ainda houver bits no buffer não escritos no arquivo, descarregue o buffer
-    if (posicao_buffer > 0) {
-        out.adiciona_byte(buffer);
-    }
-
-    // Fechando arquivos
-    fclose(arquivoEntrada);
-    fclose(arquivoSaida);
-
+    decodificado = decodificar(codificado, raiz);
+    printf("\n\tTexto decodificado: %s\n", decodificado);
     return 0;
 }
+
+
+
+// preciso que você utilize o meu buffer e meu codigo com as funções de codificar e descodificar já feitas para compressar e descompressar meu arquivo.
+// no meu arquivo compressado vai ter um cabeçalho e uma ordem especifica. 
+// os primeiros bytes serão o K, que é o tamanho do alfabeto que foi compactado. depois, os bytes que representam o tamanho do texto de entrada(T), 
+// depois os bits que representam os caracteres na ordem do percurso pré-ordem (na ordem que são encontrados na função percorrer_arvore). depois os bits do percurso pré-ordem de fato (função percorrer_arvore)
+// depois o texto de entrada compactado de fato (achado em função codificar).
+// para as sobras finais do ultimo byte não influenciarem na descompactação, contar a quantidade de letras que já foram lidas quando for descompactar (contar os bytes), precisa ser igual ao T.

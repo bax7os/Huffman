@@ -12,6 +12,7 @@ void Bits_init(Bits *bits, FILE *file) {
     bits->file = file;
     bits->n = 0;
 }
+
 void Bits_descarrega(Bits *bits) { // Força a escrita do byte no buffer (completa com 0s, caso necessário)
     if (bits->n == 0)
         return;
@@ -31,9 +32,7 @@ void Bits_adiciona_bit(Bits *bits, uint8_t bit) { // Adiciona um bit 0 ou 1 ao b
 }
 
 
-
-// Funções do modo leitura
-uint8_t Bits_obtem_bit(Bits *bits) { // Obtém o próximo bit do buffer (lê um byte do arquivo se estiver vazio)
+uint8_t Bits_obtem_bit(Bits *bits) {
     if (bits->n == 0) {
         uint8_t byte;
         if (fread(&byte, sizeof(byte), 1, bits->file) != 1)
