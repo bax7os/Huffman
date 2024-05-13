@@ -2,382 +2,390 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdint.h>
 
-//ASCII
+// ASCII
 
-#define MAX	256
+#define MAX 256
 
 // NÓ DA ARVORE - NÓ HEAP
 
 typedef struct No_arvore No_Heap;
-struct _No_arvore {
-	int		freq;	//frequencia - prioridade do heap
-	unsigned char	letra;	//letra 
-	No_Heap	*left,	//filho esquerdo arvore Huffman
-			*right;	//filho direito arvore Huffman
+struct No_arvore
+{
+    int freq;            // frequencia - prioridade do heap
+    unsigned char letra; // letra
+    No_Heap *esquerda,   // filho esquerdo arvore Huffman
+        *direita;        // filho direito arvore Huffman
 };
 
-/* this is a priority queue implemented as a binary heap */
-typedef struct _pq {
-	int		heap_size;
-	treenode	*A[NUM_CHARS];
-} PQ;
+// heap
+typedef struct heap
+{
+    int heap_size;
+    No_Heap *C[MAX];
+} heap;
 
-/* create an empty queue */
+// criando uma lista
 
-void create_pq (PQ *p) {
-	p->heap_size = 0;
+void cria_heap(heap *h)
+{
+    h->heap_size = 0;
 }
 
-/* this heap node's parent */
+// nó pai
 
-int parent (int i) {
-	return (i-1) / 2;
+int pai(int i)
+{
+    return (i - 1) / 2;
 }
 
-/* this heap node's left kid */
+// filho esquerdo
 
-int left (int i) {
-	return i * 2 + 1;
+int filho_esquerdo(int i)
+{
+    return i * 2 + 1;
 }
 
-/* this heap node's right kid */
+// filho direito
 
-int right (int i) {
-	return i * 2 + 2;
+int filho_direito(int i)
+{
+    return i * 2 + 2;
 }
 
-/* makes the subheap with root i into a heap , assuming left(i) and
- * right(i) are heaps
- */
-void heapify (PQ *p, int i) {
-	int		l, r, smallest;
-	treenode	*t;
+// função de manutenção heap
+void mantem_min_heap(heap *h, int i)
+{
+    int l, r, menor;
+    No_Heap *t;
 
-	l = left (i);
-	r = right (i);
+    l = filho_esquerdo(i);
+    r = filho_direito(i);
 
-	/* find the smallest of parent, left, and right */
+    // acha o menor
 
-	if (l < p->heap_size && p->A[l]->freq < p->A[i]->freq) 
-		smallest = l;
-	else
-		smallest = i;
-	if (r < p->heap_size && p->A[r]->freq < p->A[smallest]->freq)
-		smallest = r;
+    if (l < h->heap_size && h->C[l]->freq < h->C[i]->freq)
+        menor = l;
+    else
+        menor = i;
+    if (r < h->heap_size && h->C[r]->freq < h->C[menor]->freq)
+        menor = r;
 
-	/* swap the parent with the smallest, if needed. */
+    // troca
 
-	if (smallest != i) {
-		t = p->A[i];
-		p->A[i] = p->A[smallest];
-		p->A[smallest] = t;
-		heapify (p, smallest);
-	}
+    if (menor != i)
+    {
+        t = h->C[i];
+        h->C[i] = h->C[menor];
+        h->C[menor] = t;
+        mantem_min_heap(h, menor);
+    }
 }
 
-/* insert an element into the priority queue.  r->freq is the priority */
-void insert_pq (PQ *p, treenode *r) {
-	int		i;
+// insere o elemento de menor prioridade
+void insercao_lista(heap *h, No_Heap *r)
+{
+    int i;
 
-	p->heap_size++;
-	i = p->heap_size - 1;
+    h->heap_size++;
+    i = h->heap_size - 1;
 
-	/* we would like to place r at the end of the array,
-	 * but this might violate the heap property.  we'll start
-	 * at the end and work our way up
-	 */
-	while ((i > 0) && (p->A[parent(i)]->freq > r->freq)) {
-		p->A[i] = p->A[parent(i)];
-		i = parent (i);
-	}
-	p->A[i] = r;
+    while ((i > 0) && (h->C[pai(i)]->freq > r->freq))
+    {
+        h->C[i] = h->C[pai(i)];
+        i = pai(i);
+    }
+    h->C[i] = r;
 }
 
-/* remove the element at head of the queue (i.e., with minimum frequency) */
-treenode *extract_min_pq (PQ *p) {
-	treenode	*r;
-	
-	if (p->heap_size == 0) {
-		printf ("heap underflow!\n");
-		exit (1);
-	}
+// extrai min
+No_Heap *extrai_min(heap *h)
+{
+    No_Heap *r;
 
-	/* get return value out of the root */
+    if (h->heap_size == 0)
+    {
+        printf("heap cheia\n");
+        exit(1);
+    }
 
-	r = p->A[0];
+    r = h->C[0];
+    h->C[0] = h->C[h->heap_size - 1];
+    h->heap_size--;
 
-	/* take the last and stick it in the root (just like heapsort) */
-
-	p->A[0] = p->A[p->heap_size-1];
-
-	/* one less thing in queue */
-
-	p->heap_size--;
-
-	/* left and right are a heap, make the root a heap */
-
-	heapify (p, 0);
-	return r;
+    mantem_min_heap(h, 0);
+    return r;
 }
 
-/* read the file, computing the frequencies for each character
- * and placing them in v[]
- */
-unsigned int get_frequencies (FILE *f, unsigned int v[]) {
-	int	r, n;
+// le o arquivo
+unsigned int pega_frequencias(FILE *f, unsigned int v[])
+{
+    int r, n;
 
-	/* n will count characters */
+    for (n = 0;; n++)
+    {
+        r = fgetc(f);
+        if (feof(f))
+            break;
+        v[r]++;
+    }
+    return n;
+}
+No_Heap *novo_no(unsigned char letra)
+{
+    No_Heap *no = malloc(sizeof(No_Heap));
+    no->letra = letra;
+    no->esquerda = NULL;
+    no->direita = NULL;
+    return no;
+}
+// Arvore de Huffman
 
-	for (n=0;;n++) {
+No_Heap *monta_arvore(unsigned int freq[])
+{
+    int i, n;
+    No_Heap *x, *y, *z;
+    heap h;
 
-		/* fgetc() gets an unsigned char, converts to int */
+    cria_heap(&h);
 
-		r = fgetc (f);
-	
-		/* no more?  get out of loop */
+    for (i = 0; i < MAX; i++)
+    {
+        /* its a leaf of the Huffman tree */
+        if (freq[i] != 0)
+        {
+            x = malloc(sizeof(heap));
+            x->esquerda = NULL;
+            x->direita = NULL;
+            x->freq = freq[i];
+            x->letra = (char)i;
+            insercao_lista(&h, x);
+        }
+    }
 
-		if (feof (f)) break;
+    n = h.heap_size - 1;
 
-		/* one more of this character */
+    for (i = 0; i < n; i++)
+    {
 
-		v[r]++;
-	}
-	return n;
+        z = malloc(sizeof(heap));
+        x = extrai_min(&h);
+        y = extrai_min(&h);
+        z->esquerda = x;
+        z->direita = y;
+        z->freq = x->freq + y->freq;
+        insercao_lista(&h, z);
+    }
+
+    return extrai_min(&h);
 }
 
-/* make the huffman tree from frequencies in freq[] (Huffman's Algorithm) */
+void percorre_arvore(No_Heap *r, int nivel, char temp[], char *cod[])
+{
+    if ((r->esquerda == NULL) && (r->direita == NULL))
+    {
 
-treenode *build_huffman (unsigned int freqs[]) {
-	int		i, n;
-	treenode	*x, *y, *z;
-	PQ		p;
+        temp[nivel] = 0;
+        cod[r->letra] = strdup(temp);
+    }
+    else
+    {
 
-	/* make an empty queue */
+        temp[nivel] = '0';
 
-	create_pq (&p);
+        percorre_arvore(r->esquerda, nivel + 1, temp, cod);
 
-	/* for each character, make a heap/tree node with its value
-	 * and frequency 
-	 */
-	for (i=0; i<NUM_CHARS; i++) {
-		x = malloc (sizeof (treenode));
-
-		/* its a leaf of the Huffman tree */
-
-		x->left = NULL;
-		x->right = NULL;
-		x->freq = freqs[i];
-		x->ch = (char) i;
-
-		/* put this node into the heap */
-
-		insert_pq (&p, x);
-	}
-
-	/* at this point, the heap is a "forest" of singleton trees */
-
-	n = p.heap_size-1; /* heap_size isn't loop invariant! */
-
-	/* if we insert two things and remove one each time,
-	 * at the end of heap_size-1 iterations, there will be
-	 * one tree left in the heap
-	 */
-	for (i=0; i<n; i++) {
-
-		/* make a new node z from the two least frequent
-		 * nodes x and y
-		 */
-		z = malloc (sizeof (treenode));
-		x = extract_min_pq (&p);
-		y = extract_min_pq (&p);
-		z->left = x;
-		z->right = y;
-
-		/* z's frequency is the sum of x and y */
-
-		z->freq = x->freq + y->freq;
-
-		/* put this back in the queue */
-
-		insert_pq (&p, z);
-	}
-
-	/* return the only thing left in the queue, the whole Huffman tree */
-
-	return extract_min_pq (&p);
+        temp[nivel] = '1';
+        percorre_arvore(r->direita, nivel + 1, temp, cod);
+    }
 }
 
-/* traverse the Huffman tree, building up the codes in codes[] */
+void percorre_arvore_pre_ordem(No_Heap *r, int *preordem, int *indice, FILE *f)
+{
+    if (r == NULL)
+        return;
 
-void traverse (treenode *r, 	/* root of this (sub)tree */
-		int level, 	/* current level in Huffman tree */
-		char code_so_far[], /* code string up to this point in tree */
-		char *codes[]) {/* array of codes */
-
-	/* if we're at a leaf node, */
-
-	if ((r->left == NULL) && (r->right == NULL)) {
-
-		/* put in a null terminator */
-
-		code_so_far[level] = 0;
-
-		/* make a copy of the code and put it in the array */
-
-		codes[r->ch] = strdup (code_so_far);
-	} else {
-
-		/* not at a leaf node.  go left with bit 0 */
-
-		code_so_far[level] = '0';
-		traverse (r->left, level+1, code_so_far, codes);
-
-		/* go right with bit 1 */
-
-		code_so_far[level] = '1';
-		traverse (r->right, level+1, code_so_far, codes);
-	}
+    // Se o nó é uma folha, adiciona '1' à string
+    if (r->esquerda == NULL && r->direita == NULL)
+    {
+        preordem[(*indice)++] = 1;
+        fputc(r->letra, f);
+    }
+    else
+    {
+        preordem[(*indice)++] = 0; // Se não, adiciona '0'
+    }
+    percorre_arvore_pre_ordem(r->esquerda, preordem, indice, f);
+    percorre_arvore_pre_ordem(r->direita, preordem, indice, f);
 }
 
-/* global variables, a necessary evil */
+int n_bits, byte_atual, n_bytes, bits_faltantes;
 
-int nbits, current_byte, nbytes;
+void bit_out(FILE *f, char b, int *bit_pos, unsigned char *byte)
+{
+    *byte <<= 1;
 
-/* output a single bit to an open file */
+    if (b == '1')
+        *byte |= 1;
 
-void bitout (FILE *f, char b) {
+    (*bit_pos)--;
 
-	/* shift current byte left one */
+    if (*bit_pos < 0)
+    {
+        fputc(*byte, f);
+        n_bytes++;
+        *bit_pos = 7;
+        *byte = 0;
+    }
+}
+void write_bits(FILE *out, int *preordem, int indice, int *bit_pos, unsigned char *byte) {
+    *byte = 0;
+    *bit_pos = 7; // Começa a escrever o bit mais significativo do byte
 
-	current_byte <<= 1;
-
-	/* put a one on the end of this byte if b is '1' */
-
-	if (b == '1') current_byte |= 1;
-
-	/* one more bit */
-
-	nbits++;
-
-	/* enough bits?  write out the byte */
-
-	if (nbits == 8) {
-		fputc (current_byte, f);
-		nbytes++;
-		nbits = 0;
-		current_byte = 0;
-	}
+    // Escreve os bits do percurso pré-ordem
+    for (int i = 0; i < indice; i++) {
+        // Chama a função bit_out para cada bit
+        bit_out(out, preordem[i] == 1 ? '1' : '0', bit_pos, byte);
+    }
 }
 
-/* using the codes in codes[], encode the file in infile, writing
- * the result on outfile
- */
-void encode_file (FILE *infile, FILE *outfile, char *codes[]) {
-	unsigned char ch;
-	char	*s;
 
-	/* initialize globals for bitout() */
+void codificar(FILE *in, FILE *out, char *cod[], int *bit_pos, unsigned char *byte)
+{
+    unsigned char letra;
+    char *s;
 
-	current_byte = 0;
-	nbits = 0;
-	nbytes = 0;
+    // Começa a partir do bit que faltou
+    *bit_pos = bits_faltantes - 1;
 
-	/* continue until end of file */
+    for (;;)
+    {
+        letra = fgetc(in);
+        if (feof(in))
+            break;
 
-	for (;;) {
+        for (s = cod[letra]; *s; s++)
+            bit_out(out, *s, bit_pos, byte);
+    }
 
-		/* get a char */
-
-		ch = fgetc (infile);
-		if (feof (infile)) break;
-
-		/* put the corresponding bitstring on outfile */
-
-		for (s=codes[ch]; *s; s++) bitout (outfile, *s);
-	}
-
-	/* finish off the last byte */
-
-	while (nbits) bitout (outfile, '0');
+    // Se houver bits restantes no último byte, preencha-os com 0s e escreva-o
+    while (*bit_pos != 7)
+        bit_out(out, '0', bit_pos, byte);
 }
 
-/* main program */
-	
-int main (int argc, char *argv[]) {
-	FILE		*f, *g;
-	treenode	*r;		   /* root of Huffman tree */
-	unsigned int	n, 		   /* number of bytes in file */
-			freqs[NUM_CHARS];  /* frequency of each char */
-	char		*codes[NUM_CHARS], /* array of codes, 1 per char */
-			code[NUM_CHARS],   /* a place to hold one code */
-			fname[100];	   /* what to call output file */
+void libera_arvore(No_Heap *raiz) {
+    if (raiz == NULL)
+        return;
 
-	/* hassle user */
+    libera_arvore(raiz->esquerda);
+    libera_arvore(raiz->direita);
+    free(raiz);
+}
+void imprime_arvore(No_Heap *raiz, int nivel)
+{
+    if (raiz == NULL)
+        return;
 
-	if (argc != 2) {
-		fprintf (stderr, "Usage: %s <filename>\n", argv[0]);
-		exit (1);
-	}
+    imprime_arvore(raiz->direita, nivel + 1);
 
-	/* set all frequencies to zero */
+    for (int i = 0; i < nivel; i++)
+        printf("   ");
 
-	memset (freqs, 0, sizeof (freqs));
+    if (raiz->letra)
+        printf("[%c]\n", raiz->letra);
+    else
+        printf("[freq=%d]\n", raiz->freq);
 
-	/* open command line argument file */
-
-	f = fopen (argv[1], "r");
-	if (!f) {
-		perror (argv[1]);
-		exit (1);
-	}
-
-	/* compute frequencies from this file */
-
-	n = get_frequencies (f, freqs);
-	fclose (f);
-
-	/* make the huffman tree */
-
-	r = build_huffman (freqs);
-
-	/* traverse the tree, filling codes[] with the codes */
-
-	traverse (r, 0, code, codes);
-
-	/* name the output file something.huf */
-
-	sprintf (fname, "%s.huf", argv[1]);
-	g = fopen (fname, "w");
-	if (!g) {
-		perror (fname);
-		exit (1);
-	}
-
-	/* write frequencies to file so they can be reproduced */
-
-	fwrite (freqs, NUM_CHARS, sizeof (int), g);
-
-	/* write number of characters to file as binary int */
-
-	fwrite (&n, 1, sizeof (int), g);
-
-	/* open input file again */
-
-	f = fopen (argv[1], "r");
-	if (!f) {
-		perror (argv[1]);
-		exit (1);
-	}
-
-	/* encode f to g with codes[] */
-
-	encode_file (f, g, codes);
-	fclose (f);
-	fclose (g);
-	/* brag */
-	printf ("%s is %0.2f%% of %s\n", 
-		fname, (float) nbytes / (float) n, argv[1]);
-	exit (0);
+    imprime_arvore(raiz->esquerda, nivel + 1);
 }
 
+int main(int argc, char *argv[])
+{
+    FILE *f, *g;
+    No_Heap *r, *raiz;
+    unsigned int n, tabela_freq[MAX];
+    int indice = 0, preordem[MAX];
+    int bit_pos = 7;
+    unsigned char byte;
+    uint16_t K = 0;
+    uint32_t T = 0;
+    char *cod[MAX], codigo[MAX], nome_arquivo[100];
+
+    if (argc != 4)
+    {
+        fprintf(stderr, "Use: %s <c/d> <inputfile> <outputfile>\n", argv[0]);
+        exit(1);
+    }
+
+    memset(tabela_freq, 0, sizeof(tabela_freq));
+
+    f = fopen(argv[2], "r");
+    if (!f)
+    {
+        perror(argv[2]);
+        exit(1);
+    }
+
+    if (argv[1][0] == 'c'){
+        n = pega_frequencias(f, tabela_freq);
+        fclose(f);
+
+        // Atualiza K com o número de caracteres únicos
+        for (int i = 0; i < MAX; i++)
+        {
+            if (tabela_freq[i] != 0)
+            {
+                K++;
+            }
+        }
+
+        // Atualiza T com o tamanho do texto original
+        T = n;
+        r = monta_arvore(tabela_freq);
+        percorre_arvore(r, 0, codigo, cod);
+
+        g = fopen(argv[3], "w");
+        if (!g)
+        {
+            perror(argv[3]);
+            exit(1);
+        }
+
+        fwrite(&K, sizeof(K), 1, g);
+        fwrite(&T, sizeof(T), 1, g);
+
+        // Escreve os bits do percurso pré-ordem no arquivo
+        percorre_arvore_pre_ordem(r, preordem, &indice, g);
+       
+        write_bits(g, preordem, indice, &bit_pos, &byte);
+
+        for (int j = 0; j < indice; j++)
+        {
+            printf("%d", preordem[j]);
+        }
+        
+        // Escreve o texto compactado no arquivo
+        f = fopen(argv[2], "r");
+        if (!f)
+        {
+            perror(argv[2]);
+            exit(1);
+        }
+
+    // Continue a escrita no arquivo onde write_bits parou
+    codificar(f, g, cod, &bit_pos, &byte);
+
+        fclose(f);
+        fclose(g);
+
+        printf("%s is %0.2f%% of %s\n",
+               argv[3], (float)n_bytes / (float)n, argv[2]);
+    libera_arvore(r);
+
+    }
+    else if (argv[1][0] == 'd') {
+ 
+    return 0;
+}
+}

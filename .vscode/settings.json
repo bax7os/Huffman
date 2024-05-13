@@ -61,6 +61,7 @@
     "array": "c",
     "initializer_list": "c",
     "utility": "c",
-    "backup": "c"
+    "backup": "c",
+    "time.h": "c"
   }
 }
