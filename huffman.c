@@ -64,7 +64,7 @@ void mantem_min_heap(heap *h, int i)
     r = filho_direito(i);
 
     // acha o menor
-
+printf("4\n");
     if (l < h->heap_size && h->C[l]->freq < h->C[i]->freq)
         menor = l;
     else
@@ -99,15 +99,13 @@ void insercao_lista(heap *h, No_Heap *r)
     h->C[i] = r;
 }
 
-// extrai min
 No_Heap *extrai_min(heap *h)
 {
     No_Heap *r;
-
     if (h->heap_size == 0)
     {
-        printf("heap cheia\n");
-        exit(1);
+        fprintf(stderr, "Erro: tentando extrair elemento de heap vazio.\n");
+        return NULL;
     }
 
     r = h->C[0];
@@ -117,6 +115,7 @@ No_Heap *extrai_min(heap *h)
     mantem_min_heap(h, 0);
     return r;
 }
+
 
 // le o arquivo
 unsigned int pega_frequencias(FILE *f, unsigned int v[])
@@ -222,6 +221,13 @@ void percorre_arvore_pre_ordem(No_Heap *r, int *preordem, int *indice, FILE *f)
 
 int n_bits, byte_atual, n_bytes, bits_faltantes;
 
+typedef struct Bits
+{
+    FILE *file;   // Ponteiro para o arquivo sendo lido/escrito
+    uint8_t b[8]; // Buffer com bits de um byte
+    uint8_t n;    // Quantidade de posições ocupadas no vetor acima
+} Bits;
+
 void bit_out(FILE *f, char b, int *bit_pos, unsigned char *byte)
 {
     *byte <<= 1;
@@ -239,17 +245,32 @@ void bit_out(FILE *f, char b, int *bit_pos, unsigned char *byte)
         *byte = 0;
     }
 }
-void write_bits(FILE *out, int *preordem, int indice, int *bit_pos, unsigned char *byte) {
+void write_bits(FILE *out, int *preordem, int indice, int *bit_pos, unsigned char *byte)
+{
     *byte = 0;
     *bit_pos = 7; // Começa a escrever o bit mais significativo do byte
 
     // Escreve os bits do percurso pré-ordem
-    for (int i = 0; i < indice; i++) {
+    for (int i = 0; i < indice; i++)
+    {
         // Chama a função bit_out para cada bit
         bit_out(out, preordem[i] == 1 ? '1' : '0', bit_pos, byte);
     }
 }
 
+uint8_t Bits_obtem_bit(Bits *bits)
+{
+    if (bits->n == 0)
+    {
+        uint8_t byte;
+        if (fread(&byte, sizeof(byte), 1, bits->file) != 1)
+            return 2; // Não há mais bits para ler
+        for (int i = 0; i < 8; i++)
+            bits->b[i] = (byte >> (7 - i)) & 1;
+        bits->n = 8;
+    }
+    return bits->b[--bits->n];
+}
 
 void codificar(FILE *in, FILE *out, char *cod[], int *bit_pos, unsigned char *byte)
 {
@@ -274,7 +295,8 @@ void codificar(FILE *in, FILE *out, char *cod[], int *bit_pos, unsigned char *by
         bit_out(out, '0', bit_pos, byte);
 }
 
-void libera_arvore(No_Heap *raiz) {
+void libera_arvore(No_Heap *raiz)
+{
     if (raiz == NULL)
         return;
 
@@ -282,22 +304,67 @@ void libera_arvore(No_Heap *raiz) {
     libera_arvore(raiz->direita);
     free(raiz);
 }
-void imprime_arvore(No_Heap *raiz, int nivel)
-{
-    if (raiz == NULL)
+// Função auxiliar para impressão com indentação
+// Função auxiliar para impressão com indentação
+void imprime_arvore(No_Heap *raiz, int nivel) {
+    if (raiz == NULL) {
         return;
+    }
 
+    // Primeiro, imprima o nó da direita (para que apareça à direita quando visualizado)
     imprime_arvore(raiz->direita, nivel + 1);
 
-    for (int i = 0; i < nivel; i++)
+    // Imprime a indentação para o nível atual
+    for (int i = 0; i < nivel; i++) {
         printf("   ");
+    }
 
-    if (raiz->letra)
-        printf("[%c]\n", raiz->letra);
-    else
+    // Imprime o nó atual (letra se for folha ou frequência se for interno)
+    if (raiz->esquerda == NULL && raiz->direita == NULL) {
+        printf("[%c (%d)]\n", raiz->letra, raiz->freq);
+    } else {
         printf("[freq=%d]\n", raiz->freq);
+    }
 
+    // Finalmente, imprima o nó da esquerda
     imprime_arvore(raiz->esquerda, nivel + 1);
+}
+
+void rebuildHuffmanTree(heap *h, int* preordem, char* alfabeto, int K) {
+    int i, j = 0;
+
+    for (i = 0; i < 2 * K - 1; i++) {
+        if (preordem[i] == 1) {
+            No_Heap* node = (No_Heap*)malloc(sizeof(No_Heap));
+            node->letra = alfabeto[j++];
+            node->esquerda = node->direita = NULL;
+            insercao_lista(h, node);
+        } else {
+            No_Heap* node = (No_Heap*)malloc(sizeof(No_Heap));
+            node->letra = '\0';
+            node->direita = extrai_min(h);
+            node->esquerda = extrai_min(h);
+            insercao_lista(h, node);
+        }
+    }
+}
+void descompactar_texto(FILE *f, FILE *out, No_Heap *raiz, uint32_t T) {
+    No_Heap *atual = raiz;
+    Bits b;
+    b.file = f;
+    b.n = 0; // Inicializa o contador de bits
+
+    for (uint32_t i = 0; i < T; i++) {
+        while (atual->esquerda || atual->direita) {
+            uint8_t bit = Bits_obtem_bit(&b);
+            if (bit == 1)
+                atual = atual->direita;
+            else
+                atual = atual->esquerda;
+        }
+        fputc(atual->letra, out);
+        atual = raiz;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -327,7 +394,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    if (argv[1][0] == 'c'){
+    if (argv[1][0] == 'c')
+    {
         n = pega_frequencias(f, tabela_freq);
         fclose(f);
 
@@ -357,14 +425,14 @@ int main(int argc, char *argv[])
 
         // Escreve os bits do percurso pré-ordem no arquivo
         percorre_arvore_pre_ordem(r, preordem, &indice, g);
-       
+
         write_bits(g, preordem, indice, &bit_pos, &byte);
 
         for (int j = 0; j < indice; j++)
         {
             printf("%d", preordem[j]);
         }
-        
+
         // Escreve o texto compactado no arquivo
         f = fopen(argv[2], "r");
         if (!f)
@@ -373,19 +441,87 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-    // Continue a escrita no arquivo onde write_bits parou
-    codificar(f, g, cod, &bit_pos, &byte);
+        // Continue a escrita no arquivo onde write_bits parou
+        codificar(f, g, cod, &bit_pos, &byte);
 
         fclose(f);
         fclose(g);
 
         printf("%s is %0.2f%% of %s\n",
                argv[3], (float)n_bytes / (float)n, argv[2]);
-    libera_arvore(r);
-
+        libera_arvore(r);
     }
-    else if (argv[1][0] == 'd') {
- 
+    else if (argv[1][0] == 'd')
+    {
+        Bits *b = malloc(sizeof(Bits));
+        uint16_t letras[MAX];
+        uint8_t valor;
+        char alfabeto[MAX];
+        // Lê K e T do cabeçalho
+
+        fread(&K, sizeof(K), 1, f);
+        fread(&T, sizeof(T), 1, f);
+
+        if (b == NULL)
+        {
+            fprintf(stderr, "Falha ao alocar memória para Bits\n");
+            return 1;
+        }
+        b->file = f;
+        b->n = 0; // Inicializa o contador de bits
+
+        // Posiciona o ponteiro do arquivo para começar a ler as letras do alfabeto
+        fseek(f, sizeof(K) + sizeof(T), SEEK_SET);
+        // printf("%d %d\n", K, T);
+
+        for (int i = 0; i < K; i++)
+        {
+            // Lê cada letra do alfabeto
+            fread(&valor, sizeof(valor), 1, f);
+            // printf("%c\n", valor);
+            alfabeto[i] = valor;
+        }
+        // Lê o primeiro byte após as letras do alfabeto
+        // Bits_obtem_bit(b);
+        long pos = ftell(f);
+        printf("Posição atual do ponteiro do arquivo: %ld\n", pos);
+
+        Bits_obtem_bit(b);
+        int n_folhas=0,j = 0;
+        while (n_folhas < K)
+        {
+            if (b->b[j] == 1)
+            {
+                n_folhas++;
+            }
+
+            preordem[j] = b->b[j];
+            j++;
+        }
+        
+            
+        for (int i = 0; i < j; i++)
+        {
+           printf("%d", preordem[i]);
+        }
+
+        heap h;
+        cria_heap(&h);
+        rebuildHuffmanTree(&h, preordem, alfabeto, K);
+        raiz = extrai_min(&h);
+
+        g = fopen(argv[3], "wb");
+        if (!g) {
+            perror(argv[3]);
+            exit(1);
+        }
+
+        descompactar_texto(f, g, raiz, T);
+
+        fclose(g);
+        libera_arvore(raiz);
+    }
+
+    fclose(f);
     return 0;
-}
 }
