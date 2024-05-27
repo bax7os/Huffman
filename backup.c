@@ -263,7 +263,8 @@ uint8_t Bits_obtem_bit(Bits *bits)
         uint8_t byte;
         if (fread(&byte, sizeof(byte), 1, bits->file) != 1)
             return 2; // Não há mais bits para ler
-        for (int i = 0; i < 8; i++){
+        for (int i = 0; i < 8; i++)
+        {
             bits->b[i] = (byte >> (7 - i)) & 1;
             printf("%d", bits->b[i]);
         }
@@ -362,7 +363,7 @@ void descompactar_texto(FILE *f, FILE *g, No_Heap *raiz, uint32_t tamanho_texto,
             for (int i = 0; i < h; i++)
             {
                 printf("1");
-                    // Navega na árvore de Huffman
+                // Navega na árvore de Huffman
                 if (*restante[i] == 1)
                     atual = atual->direita;
                 else
@@ -377,46 +378,42 @@ void descompactar_texto(FILE *f, FILE *g, No_Heap *raiz, uint32_t tamanho_texto,
                 }
             }
             h = 0;
-        }else
+        }
+        else
         {
-           printf("2");
-        byte = fgetc(f);
-        for (bit = 7; bit >= 0 && contagem < tamanho_texto; bit--)
-        {
-            int bit_valor = (byte >> bit) & 1;
-            printf("%d", bit_valor); // Imprime o bit atual
-
-            // Navega na árvore de Huffman
-            if (bit_valor)
-                atual = atual->direita;
-            else
-                atual = atual->esquerda;
-
-            // Se é uma folha, escreve o caractere no arquivo de saída
-            if (!atual->esquerda && !atual->direita)
+            printf("2");
+            byte = fgetc(f);
+            for (bit = 7; bit >= 0 && contagem < tamanho_texto; bit--)
             {
-                fputc(atual->letra, g);
-                atual = raiz;
-                contagem++;
+                int bit_valor = (byte >> bit) & 1;
+                printf("%d", bit_valor); // Imprime o bit atual
+
+                // Navega na árvore de Huffman
+                if (bit_valor)
+                    atual = atual->direita;
+                else
+                    atual = atual->esquerda;
+
+                // Se é uma folha, escreve o caractere no arquivo de saída
+                if (!atual->esquerda && !atual->direita)
+                {
+                    fputc(atual->letra, g);
+                    atual = raiz;
+                    contagem++;
+                }
             }
         }
-        }
-        
-        
-
 
         printf("\n");
     }
 }
 
-
-
 int main(int argc, char *argv[])
 {
     FILE *f, *g;
     No_Heap *r, *raiz;
-    unsigned int n, tabela_freq[MAX];
-    int indice = 0, preordem[MAX];
+    unsigned int n, tabela_freq[MAX] = {0}; // Initialize tabela_freq
+    int indice = 0, preordem[MAX] = {0};    // Initialize preordem
     int bit_pos = 7;
     unsigned char byte;
     uint16_t K = 0;
@@ -430,11 +427,18 @@ int main(int argc, char *argv[])
     }
 
     memset(tabela_freq, 0, sizeof(tabela_freq));
-
     f = fopen(argv[2], "r");
     if (!f)
     {
         perror(argv[2]);
+        exit(1);
+    }
+
+    g = fopen(argv[3], "w");
+    if (!g)
+    {
+        perror(argv[3]);
+        fclose(f); // Close the file before exiting
         exit(1);
     }
 
@@ -457,13 +461,6 @@ int main(int argc, char *argv[])
         r = monta_arvore(tabela_freq);
         percorre_arvore(r, 0, codigo, cod);
 
-        g = fopen(argv[3], "w");
-        if (!g)
-        {
-            perror(argv[3]);
-            exit(1);
-        }
-
         fwrite(&K, sizeof(K), 1, g);
         fwrite(&T, sizeof(T), 1, g);
 
@@ -474,26 +471,22 @@ int main(int argc, char *argv[])
 
         for (int j = 0; j < indice; j++)
         {
-            printf("%d", preordem[j]);
-        }
-
-        // Escreve o texto compactado no arquivo
-        f = fopen(argv[2], "r");
-        if (!f)
-        {
-            perror(argv[2]);
-            exit(1);
+            // printf("%d", preordem[j]);
         }
 
         // Continue a escrita no arquivo onde write_bits parou
         codificar(f, g, cod, &bit_pos, &byte);
 
-        fclose(f);
-        fclose(g);
-
         printf("%s is %0.2f%% of %s\n",
                argv[3], (float)n_bytes / (float)n, argv[2]);
         libera_arvore(r);
+        for (int i = 0; i < MAX; i++)
+        {
+            if (cod[i] != NULL)
+            {
+                free(cod[i]);
+            }
+        }
     }
     else if (argv[1][0] == 'd')
     {
@@ -516,22 +509,21 @@ int main(int argc, char *argv[])
 
         // Posiciona o ponteiro do arquivo para começar a ler as letras do alfabeto
         fseek(f, sizeof(K) + sizeof(T), SEEK_SET);
-     printf("%d %d\n", K, T);
+        printf("%d %d\n", K, T);
 
         for (int i = 0; i < K; i++)
         {
             // Lê cada letra do alfabeto
             fread(&valor, sizeof(valor), 1, f);
-            printf("%c\n", valor);
+            //printf("%c\n", valor);
             alfabeto[i] = valor;
         }
         // Lê o primeiro byte após as letras do alfabeto
         // Bits_obtem_bit(b);
-       // long pos = ftell(f);
-        //printf("Posição atual do ponteiro do arquivo: %ld\n", pos);
+        // long pos = ftell(f);
+        // printf("Posição atual do ponteiro do arquivo: %ld\n", pos);
 
         Bits_obtem_bit(b);
-     
 
         int n_folhas = 0, j = 0, i = 0;
         int *restante = malloc(sizeof(int) * sizeof(b->b)); // N é o tamanho de b->b[]
@@ -566,21 +558,16 @@ int main(int argc, char *argv[])
         raiz = reconstroi_huffman(preordem, alfabeto, &index, n);
         imprime_preordem(raiz);
 
-        g = fopen(argv[3], "wb");
-        if (!g)
-        {
-            perror(argv[3]);
-            exit(1);
-        }
-        //pos = ftell(f);
-        //printf("Posição atual do ponteiro do arquivo: %ld\n", pos);
+        // pos = ftell(f);
+        // printf("Posição atual do ponteiro do arquivo: %ld\n", pos);
 
         descompactar_texto(f, g, raiz, T, &restante, i);
 
-        fclose(g);
+        free(restante); 
+        free(b);
         libera_arvore(raiz);
     }
-
+     fclose(g);
     fclose(f);
     return 0;
 }

@@ -98,6 +98,8 @@ void insercao_lista(heap *h, No_Heap *r)
     h->C[i] = r;
 }
 
+
+
 No_Heap *extrai_min(heap *h)
 {
     No_Heap *r;
@@ -126,9 +128,7 @@ unsigned int pega_frequencias(FILE *f, unsigned int v[])
         if (feof(f))
             break;
         v[r]++;
-        
     }
-    printf("\n");
     return n;
 }
 No_Heap *novo_no(unsigned char letra)
@@ -174,7 +174,6 @@ No_Heap *monta_arvore(unsigned int freq[])
         z->esquerda = x;
         z->direita = y;
         z->freq = x->freq + y->freq;
-        z->letra = '+';
         insercao_lista(&h, z);
     }
 
@@ -199,7 +198,6 @@ void percorre_arvore(No_Heap *r, int nivel, char temp[], char *cod[])
         temp[nivel] = '1';
         percorre_arvore(r->direita, nivel + 1, temp, cod);
     }
-    
 }
 
 void percorre_arvore_pre_ordem(No_Heap *r, int *preordem, int *indice, FILE *f)
@@ -242,7 +240,6 @@ void bit_out(FILE *f, char b, int *bit_pos, unsigned char *byte)
     if (*bit_pos < 0)
     {
         fputc(*byte, f);
-        printf("oi");
         n_bytes++;
         *bit_pos = 7;
         *byte = 0;
@@ -258,9 +255,9 @@ void write_bits(FILE *out, int *preordem, int indice, int *bit_pos, unsigned cha
     {
         // Chama a função bit_out para cada bit
         bit_out(out, preordem[i] == 1 ? '1' : '0', bit_pos, byte);
-       
     }
 }
+
 uint8_t Bits_obtem_bit(Bits *bits)
 {
     if (bits->n == 0)
@@ -270,7 +267,7 @@ uint8_t Bits_obtem_bit(Bits *bits)
             return 2; // Não há mais bits para ler
         for (int i = 0; i < 8; i++){
             bits->b[i] = (byte >> (7 - i)) & 1;
-           // printf("%d", bits->b[i]);
+            printf("%d", bits->b[i]);
         }
         bits->n = 8;
     }
@@ -334,7 +331,7 @@ No_Heap *reconstroi_huffman(int *preordem, char *alfabeto, int *index, int n)
     if (preordem[*index] == 1)
     { // Folha
         node->letra = alfabeto[letra];
-       // printf("%c\n", node->letra);
+        printf("%c\n", node->letra);
         node->esquerda = NULL;
         node->direita = NULL;
         letra++;
@@ -366,7 +363,7 @@ void descompactar_texto(FILE *f, FILE *g, No_Heap *raiz, uint32_t tamanho_texto,
         {
             for (int i = 0; i < h; i++)
             {
-              //  printf("1");
+                printf("1");
                     // Navega na árvore de Huffman
                 if (*restante[i] == 1)
                     atual = atual->direita;
@@ -384,12 +381,12 @@ void descompactar_texto(FILE *f, FILE *g, No_Heap *raiz, uint32_t tamanho_texto,
             h = 0;
         }else
         {
-          // printf("2");
+           printf("2");
         byte = fgetc(f);
         for (bit = 7; bit >= 0 && contagem < tamanho_texto; bit--)
         {
             int bit_valor = (byte >> bit) & 1;
-            //printf("%d", bit_valor); // Imprime o bit atual
+            printf("%d", bit_valor); // Imprime o bit atual
 
             // Navega na árvore de Huffman
             if (bit_valor)
@@ -410,7 +407,7 @@ void descompactar_texto(FILE *f, FILE *g, No_Heap *raiz, uint32_t tamanho_texto,
         
 
 
-       // printf("\n");
+        printf("\n");
     }
 }
 
@@ -420,13 +417,13 @@ int main(int argc, char *argv[])
 {
     FILE *f, *g;
     No_Heap *r, *raiz;
-    unsigned int n, tabela_freq[MAX] = {0}; // Initialize tabela_freq
-    int indice = 0, preordem[MAX] = {0}; // Initialize preordem
+    unsigned int n, tabela_freq[MAX] = {0};
+    int indice = 0, preordem[10] = {0};
     int bit_pos = 7;
-    unsigned char byte = 0; // Initialize byte
+    unsigned char byte;
     uint16_t K = 0;
     uint32_t T = 0;
-    char *cod[MAX] = {NULL}, codigo[MAX], nome_arquivo[100]; // Initialize cod
+    char *cod[MAX] = {0}, codigo[MAX], nome_arquivo[100];
 
     if (argc != 4)
     {
@@ -434,25 +431,19 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    memset(tabela_freq, 0, sizeof(tabela_freq));
+
     f = fopen(argv[2], "r");
     if (!f)
     {
         perror(argv[2]);
         exit(1);
     }
-    
-    g = fopen(argv[3], "w");
-    if (!g)
-    {
-        perror(argv[3]);
-        fclose(f); // Close the file before exiting
-        exit(1);
-    }
 
     if (argv[1][0] == 'c')
     {
         n = pega_frequencias(f, tabela_freq);
-        printf("%d", n);
+        fclose(f);
 
         // Atualiza K com o número de caracteres únicos
         for (int i = 0; i < MAX; i++)
@@ -464,11 +455,17 @@ int main(int argc, char *argv[])
         }
 
         // Atualiza T com o tamanho do texto original
+        T = n;
         r = monta_arvore(tabela_freq);
-        imprime_preordem(r);
         percorre_arvore(r, 0, codigo, cod);
 
-        T = n;
+        g = fopen(argv[3], "w");
+        if (!g)
+        {
+            perror(argv[3]);
+            exit(1);
+        }
+
         fwrite(&K, sizeof(K), 1, g);
         fwrite(&T, sizeof(T), 1, g);
 
@@ -482,99 +479,120 @@ int main(int argc, char *argv[])
             printf("%d", preordem[j]);
         }
 
+        // Escreve o texto compactado no arquivo
+        f = fopen(argv[2], "r");
+        if (!f)
+        {
+            perror(argv[2]);
+            exit(1);
+        }
+
         // Continue a escrita no arquivo onde write_bits parou
-        fseek(f, 0, SEEK_SET); // Reset the file pointer to the beginning
         codificar(f, g, cod, &bit_pos, &byte);
+
+
 
         printf("%s is %0.2f%% of %s\n",
                argv[3], (float)n_bytes / (float)n, argv[2]);
         libera_arvore(r);
-
-        for (int i = 0; i < MAX; i++) {
-            if (cod[i] != NULL) {
+        fclose(f);
+        fclose(g);
+                for (int i = 0; i < MAX; i++)
+        {
+            if (cod[i] != NULL)
+            {
                 free(cod[i]);
             }
         }
-
     }
     else if (argv[1][0] == 'd')
     {
-        Bits b;
+        Bits *b = malloc(sizeof(Bits));
         uint16_t letras[MAX];
-        uint8_t valor = 0;
+        uint8_t valor;
         char alfabeto[MAX];
         // Lê K e T do cabeçalho
 
         fread(&K, sizeof(K), 1, f);
         fread(&T, sizeof(T), 1, f);
 
-        b.file = f;
-        b.n = 0; // Inicializa o contador de bits
+        if (b == NULL)
+        {
+            fprintf(stderr, "Falha ao alocar memória para Bits\n");
+            return 1;
+        }
+        b->file = f;
+        b->n = 0; // Inicializa o contador de bits
 
         // Posiciona o ponteiro do arquivo para começar a ler as letras do alfabeto
         fseek(f, sizeof(K) + sizeof(T), SEEK_SET);
-        //printf("%d %d\n", K, T);
+        printf("%d %d\n", K, T);
 
         for (int i = 0; i < K; i++)
         {
             // Lê cada letra do alfabeto
             fread(&valor, sizeof(valor), 1, f);
-            //printf("%c\n", valor);
+            printf("%c\n", valor);
             alfabeto[i] = valor;
         }
+        // Lê o primeiro byte após as letras do alfabeto
+        // Bits_obtem_bit(b);
+       // long pos = ftell(f);
+        //printf("Posição atual do ponteiro do arquivo: %ld\n", pos);
 
-        Bits_obtem_bit(&b);
+        Bits_obtem_bit(b);
+     
 
-        int n_folhas = 0, j = 0, i = 0;
-        int *restante = malloc(16 * sizeof(int)); // Dynamically allocate restante
-        printf("1");
+        int n_folhas = 0, j = 0, r = 0;
+        int *restante = malloc(sizeof(int) * sizeof(b->b)); // N é o tamanho de b->b[]
+
         while (n_folhas < K)
         {
-            if (b.b[j] == 1)
+            if (b->b[j] == 1)
             {
                 n_folhas++;
             }
 
-            preordem[j] = b.b[j];
+            preordem[j] = b->b[j];
             j++;
         }
 
         // Guardar os valores restantes em outro vetor
-        i = 0;
-        if (j < 8)
+        while (j < sizeof(b->b))
         {
-                   for (int k = j+1; k < 8; k++)
-        {
-            restante[i] = b.b[k];
-            i++;
-           printf("%d", restante[i]);
+            restante[r] = b->b[j];
+            r++;
+            j++;
         }
-        
-        }
-        
 
-
-
-        
-
-        for (int k = 0; k < i; k++)
+        for (int i = 0; i < j; i++)
         {
-            //printf("%d", preordem[k]);
+            printf("%d", preordem[i]);
         }
 
         int index = 0;
         n = sizeof(preordem) / sizeof(preordem[0]);
 
         raiz = reconstroi_huffman(preordem, alfabeto, &index, n);
-        //imprime_preordem(raiz);
+        imprime_preordem(raiz);
 
-        descompactar_texto(f, g, raiz, T, &restante, i);
+        g = fopen(argv[3], "wb");
+        if (!g)
+        {
+            perror(argv[3]);
+            exit(1);
+        }
+        //pos = ftell(f);
+        //printf("Posição atual do ponteiro do arquivo: %ld\n", pos);
 
+        descompactar_texto(f, g, raiz, T, &restante, r);
+        fclose(f);
+        fclose(g);
+        free(restante);
+        free(b);
         libera_arvore(raiz);
-        free(restante); // Free the dynamically allocated memory
     }
-    fclose(f);
-    fclose(g);
 
+ 
     return 0;
 }
